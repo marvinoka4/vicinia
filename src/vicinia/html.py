@@ -15,6 +15,7 @@ RUN_LABELS = {
     "S2-local": "S2 reserve only (no sharing)",
     "S2-pv-only": "S2 without battery sharing",
     "pooled-ref": "Pooled PV + storage reference",
+    "baseline_lagos": "Lagos baseline, full year",
     "feeder_kw": "feeder capacity (kW)",
     "loss_fraction": "distribution loss (fraction)",
     "reserve_soc": "S2 battery reserve (SoC)",
@@ -166,7 +167,7 @@ DEFAULTS_TEXT = (
     "reserve lowered critical coverage and left more donors worse off, so the reserve was lowered to 30%. With a flat "
     "price, battery donors subsidise their neighbours: they sell stored energy at 600 NGN/kWh and later serve less of "
     "their own load or refill it with petrol at about 1,556 NGN/kWh. Pricing battery-sourced energy at 1,200 NGN/kWh, "
-    "with PV surplus kept at 600 NGN/kWh, removes that transfer on this seed. Dispatch does not depend on price, so "
+    "with PV surplus kept at 600 NGN/kWh, removes that transfer on this seed. In the sweep figure the reserve is varied at the two-tier price and the price at a 30% reserve. Dispatch does not depend on price, so "
     "coverage and fuel do not change with it; only who gains does."
 )
 
