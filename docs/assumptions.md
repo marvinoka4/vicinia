@@ -86,7 +86,8 @@ It mirrors how backup systems are commonly wired in Nigerian homes (an
 |---|---|---|
 | Shared feeder transfer limit | 25 kW (sent side) | **Assumption** for a small estate network. |
 | Distribution losses | 5% of energy sent | **Assumption**, parameter. Sensitivity run at 0%, 10% and 20%. |
-| S2 battery reserve | 50% state of charge, held for the household's own critical load | **Assumption**, parameter. Sensitivity run from 20% to 80%. |
+| S2 battery reserve | 30% state of charge, held for the household's own critical load | Parameter. The first version used 50%. The sensitivity sweep (`results/sensitivity_lagos_S2.csv`) showed that a higher reserve lowers community critical coverage and leaves more donor households worse off, including in the 72-hour blackout test, so the default was lowered to 30%. Results for 20% to 80% are published. For lead-acid batteries the reserve cannot go below their 50% minimum. |
+| S2 order of battery use | A home's battery serves its own critical load, then its own non-critical load down to the reserve; only energy still above the reserve is offered to neighbours' critical deficits | Design choice: a household is unlikely to accept its battery powering neighbours while its own loads are off. |
 | When sharing happens | Only during grid outages and only when communication is up | Design choice. The settlement price is above the grid tariff, so no rational buyer would buy from a neighbour while the grid is on. |
 | Arrival order (S1) | Random permutation per interval, seeded | Design choice to model "first come, first served" without bias toward low household indices. |
 
@@ -96,7 +97,8 @@ It mirrors how backup systems are commonly wired in Nigerian homes (an
 |---|---|---|
 | Grid tariff | 209.50 NGN/kWh | Band A tariff from July 2024 as reported by Arise News, https://www.arise.tv/power-distribution-companies-raise-tariffs-for-band-a-customers-from-n206-80-kwh-to-n209-5-kwh/ . Bands B to E pay less; using Band A overstates grid cost for a Band C feeder. It only affects the cost metric. |
 | Petrol price | 1,596 NGN/L | National Bureau of Statistics average for May 2026 as reported by Legit.ng, https://www.legit.ng/business-economy/energy/1716120-nbs-reports-petrol-price-climbs-5531-n1596litre-2026/ . Prices moved fast in 2026 (about 1,035 NGN/L in January). |
-| Settlement price | 600 NGN/kWh | **Assumption.** Must lie between the grid tariff and the generator cost per kWh; the scenario loader rejects values outside that range. The buyer pays for energy delivered, so the seller bears distribution losses. |
+| Settlement price, PV surplus | 600 NGN/kWh | **Assumption.** Must lie between the grid tariff and the generator cost per kWh; the scenario loader rejects values outside that range. The buyer pays for energy delivered, so the seller bears distribution losses. |
+| Settlement price, battery energy | 1,200 NGN/kWh | Parameter. Battery energy has an opportunity cost for the donor. With a single 600 NGN/kWh price, 3 of 50 households (all solar-battery donors) ended the Lagos year worse off than islanded; at 1,200 NGN/kWh none did. The price sweep is published in `results/sensitivity_lagos_S2.csv`. |
 | Money unit in ledger | Integer kobo | Design choice so that netting is exact. |
 
 ## Generators and emissions
