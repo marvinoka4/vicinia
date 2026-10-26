@@ -38,8 +38,13 @@ DEFAULTS: dict[str, Any] = {
         "grid_charge_soc": 0.70,
     },
     "grid": {},
-    "sharing": {"feeder_kw": 25.0, "loss_fraction": 0.05, "reserve_soc": 0.5, "share_battery": True},
-    "prices": {"settlement_ngn_per_kwh": 600.0, "grid_tariff_ngn_per_kwh": 209.5, "fuel_ngn_per_l": 1596.0},
+    "sharing": {"feeder_kw": 25.0, "loss_fraction": 0.05, "reserve_soc": 0.3, "share_battery": True},
+    "prices": {
+        "settlement_ngn_per_kwh": 600.0,
+        "battery_settlement_ngn_per_kwh": 1200.0,
+        "grid_tariff_ngn_per_kwh": 209.5,
+        "fuel_ngn_per_l": 1596.0,
+    },
     "generator": {"fuel_noload_l_per_kw_h": 0.25, "fuel_l_per_kwh": 0.35, "min_load_kw": 0.10, "co2_kg_per_l": 2.27},
     "events": [],
     "window": None,
@@ -219,6 +224,9 @@ def build(cfg: dict, days: int | None = None) -> Built:
         reserve_soc=float(sh["reserve_soc"]),
         share_battery=bool(sh["share_battery"]),
         settlement_ngn_per_kwh=float(pr["settlement_ngn_per_kwh"]),
+        battery_settlement_ngn_per_kwh=(
+            float(pr["battery_settlement_ngn_per_kwh"]) if pr.get("battery_settlement_ngn_per_kwh") is not None else None
+        ),
         grid_tariff_ngn_per_kwh=float(pr["grid_tariff_ngn_per_kwh"]),
         fuel_ngn_per_l=float(pr["fuel_ngn_per_l"]),
         gen_fuel_noload_l_per_kw_h=float(gn["fuel_noload_l_per_kw_h"]),
@@ -229,11 +237,11 @@ def build(cfg: dict, days: int | None = None) -> Built:
     )
     lo = params.grid_tariff_ngn_per_kwh
     hi = params.gen_cost_ngn_per_kwh()
-    if not lo <= params.settlement_ngn_per_kwh <= hi:
-        raise ValueError(
-            f"settlement price {params.settlement_ngn_per_kwh} must lie between grid tariff {lo} "
-            f"and generator cost {hi:.0f} NGN/kWh"
-        )
+    for price in (params.settlement_ngn_per_kwh, params.battery_settlement_ngn_per_kwh):
+        if price is not None and not lo <= price <= hi:
+            raise ValueError(
+                f"settlement price {price} must lie between grid tariff {lo} and generator cost {hi:.0f} NGN/kWh"
+            )
 
     win = cfg.get("window")
     if win:

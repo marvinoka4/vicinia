@@ -54,7 +54,11 @@ class Ledger:
     def head(self) -> str:
         return self.hashes[-1] if self.hashes else GENESIS
 
-    def append(self, interval: int, sender: int, receiver: int, kwh_sent: float, kwh_received: float) -> Entry:
+    def append(
+        self, interval: int, sender: int, receiver: int, kwh_sent: float, kwh_received: float, price: float | None = None
+    ) -> Entry:
+        """Add one transfer. `price` overrides the ledger's default price in NGN/kWh."""
+        price = self.price_ngn_per_kwh if price is None else price
         if sender == receiver:
             raise ValueError("sender and receiver must differ")
         if kwh_sent < 0 or kwh_received < 0 or kwh_received > kwh_sent + 1e-12:
@@ -66,8 +70,8 @@ class Ledger:
             receiver=int(receiver),
             kwh_sent=float(kwh_sent),
             kwh_received=float(kwh_received),
-            price_ngn_per_kwh=float(self.price_ngn_per_kwh),
-            amount_kobo=int(round(kwh_received * self.price_ngn_per_kwh * 100)),
+            price_ngn_per_kwh=float(price),
+            amount_kobo=int(round(kwh_received * price * 100)),
         )
         self.entries.append(e)
         self.hashes.append(_hash(self.head, e))

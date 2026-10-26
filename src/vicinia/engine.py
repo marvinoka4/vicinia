@@ -72,9 +72,12 @@ class SimInputs:
 class Params:
     strategy: str = "S2"
     loss_fraction: float = 0.05
-    reserve_soc: float = 0.5
+    reserve_soc: float = 0.3
     share_battery: bool = True
     settlement_ngn_per_kwh: float = 600.0
+    # Price for energy discharged from a donor's battery (S2 battery sharing).
+    # None means the same as settlement_ngn_per_kwh.
+    battery_settlement_ngn_per_kwh: float | None = None
     grid_tariff_ngn_per_kwh: float = 209.5
     fuel_ngn_per_l: float = 1596.0
     gen_fuel_noload_l_per_kw_h: float = 0.25
@@ -152,6 +155,7 @@ def simulate(
     ts = {k: np.zeros(T) for k in TS_FIELDS}
     rec = {k: np.zeros((H, T)) for k in REC_FIELDS} if record else None
     ledger = Ledger(p.settlement_ngn_per_kwh)
+    batt_price = p.settlement_ngn_per_kwh if p.battery_settlement_ngn_per_kwh is None else p.battery_settlement_ngn_per_kwh
     zeros = np.zeros(H)
 
     w0, w1 = (0, T) if window is None else (window.start or 0, T if window.stop is None else window.stop)
@@ -248,7 +252,7 @@ def simulate(
                     s2_sent = pro_rata(total_sent2, offer2)
                     idx = np.arange(H)
                     for d, r, a in pair_flows(s2_sent, got2, p.loss_fraction, idx, idx):
-                        ledger.append(t, d, r, a, a * keep)
+                        ledger.append(t, d, r, a, a * keep, batt_price)
                     soc = soc - s2_sent / eta
                     dis = dis + s2_sent
                     sent += s2_sent

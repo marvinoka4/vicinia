@@ -15,6 +15,10 @@ RUN_LABELS = {
     "S2-local": "S2 reserve only (no sharing)",
     "S2-pv-only": "S2 without battery sharing",
     "pooled-ref": "Pooled PV + storage reference",
+    "feeder_kw": "feeder capacity (kW)",
+    "loss_fraction": "distribution loss (fraction)",
+    "reserve_soc": "S2 battery reserve (SoC)",
+    "battery_settlement_ngn_per_kwh": "battery energy price (NGN/kWh)",
 }
 
 HEADLINE_COLS = [
@@ -140,6 +144,8 @@ def _intro(base, stress, sens, rt, led, quick) -> list[str]:
         f"- The S2 battery reserve without sharing (S2-local) gives {lag.loc['S2-local']['crit_coverage_outage_pct']:.1f}%, "
         f"and S2 without battery sharing gives {lag.loc['S2-pv-only']['crit_coverage_outage_pct']:.1f}%, so most of the S2 gain "
         "comes from routing stored energy to neighbours' critical loads.",
+        f"- Households worse off than under islanded operation over the year: S1 {int(s1['households_worse_off'])}, "
+        f"S2 {int(s2['households_worse_off'])} of {int(s2['households'])}. Gini of benefit: S1 {s1['gini_benefit']:.2f}, S2 {s2['gini_benefit']:.2f}.",
         f"- Settlement ledger for S2: {led['entries']:,} hash-chained entries, verify() = {led['verified']}, "
         f"altering one entry detected = {led['tamper_detected']}, largest daily netting imbalance = {led['daily_netting_max_abs_kobo']} kobo.",
         f"- Runtime for the Lagos run ({f['days']:.0f} days, 15-minute steps, 50 households): "
@@ -183,6 +189,24 @@ SEED_COLS = [
     ("cov", "Critical coverage, mean (min to max) %", "{}"),
     ("worst", "Worst household, mean (min to max) %", "{}"),
     ("fuel", "Fuel cut vs S0, mean (min to max) %", "{}"),
+]
+
+
+SENS_COLS = [
+    ("parameter", "Parameter", None),
+    ("value", "Value", "{:g}"),
+    ("crit_coverage_outage_pct", "Critical coverage (%)", "{:.1f}"),
+    ("crit_coverage_no_gen_pct", "Without generator (%)", "{:.1f}"),
+    ("worst_household_crit_coverage_pct", "Worst household (%)", "{:.1f}"),
+    ("fuel_l", "Fuel (L)", "{:,.0f}"),
+    ("peak_transfer_kw", "Peak transfer (kW)", "{:.1f}"),
+    ("households_worse_off", "Households worse off than S0", "{:d}"),
+]
+
+PRICE_COLS = [
+    ("value", "Battery energy price (NGN/kWh)", "{:,.0f}"),
+    ("households_worse_off", "Households worse off than S0", "{:d}"),
+    ("gini_benefit", "Gini of benefit", "{:.2f}"),
 ]
 
 
@@ -235,20 +259,17 @@ def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None) -
     lines += [
         "## Sensitivity of S2 (Lagos)",
         "",
-        md_table(
-            sens,
-            [
-                ("parameter", "Parameter", None),
-                ("value", "Value", "{:g}"),
-                ("crit_coverage_outage_pct", "Critical coverage (%)", "{:.1f}"),
-                ("crit_coverage_no_gen_pct", "Without generator (%)", "{:.1f}"),
-                ("worst_household_crit_coverage_pct", "Worst household (%)", "{:.1f}"),
-                ("fuel_l", "Fuel (L)", "{:,.0f}"),
-                ("peak_transfer_kw", "Peak transfer (kW)", "{:.1f}"),
-            ],
-        ).replace("| feeder kw |", "| feeder_kw |").replace("| loss fraction |", "| loss_fraction |").replace("| reserve soc |", "| reserve_soc |"),
+        md_table(sens[sens.parameter != "battery_settlement_ngn_per_kwh"], SENS_COLS),
         "",
         "![Sensitivity](figures/sensitivity_lagos.png)",
+        "",
+        "## Settlement price for battery energy",
+        "",
+        "PV surplus that would otherwise be curtailed is settled at the base price. Energy a donor discharges from "
+        "its battery has an opportunity cost (the donor may later need its generator), so it can carry a higher price. "
+        "Dispatch does not change with price; only who gains does.",
+        "",
+        md_table(sens[sens.parameter == "battery_settlement_ngn_per_kwh"], PRICE_COLS),
         "",
         "## Seed-to-seed variation (Lagos)",
         "",
@@ -353,6 +374,10 @@ def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None)
 {html_table(_seed_rows(seeds), SEED_COLS) if seeds is not None else ''}
 <h2>Sensitivity of S2</h2>
 {_img(fig / 'sensitivity_lagos.png', 'One-at-a-time sensitivity of S2 critical coverage to feeder capacity, distribution losses and battery reserve.')}
+{html_table(sens[sens.parameter != "battery_settlement_ngn_per_kwh"], SENS_COLS)}
+<h2>Settlement price for battery energy</h2>
+<p class="lede">PV surplus is settled at the base price. Battery energy carries a separate price because the donor gives up stored energy it might need later. Dispatch does not change with price; only who gains does.</p>
+{html_table(sens[sens.parameter == "battery_settlement_ngn_per_kwh"], PRICE_COLS)}
 <h2>Settlement ledger</h2>
 <p class="lede">Every transfer in the Lagos S2 run is a ledger entry chained with SHA-256. verify() = {led['verified']}. After altering entry {led.get('tampered_index')} in a copy, verify() fails at entry {led.get('first_invalid_after_tamper')}. Head hash: <code>{_html.escape(str(led.get('head_hash', ''))[:16])}...</code></p>
 <footer>Generated by <code>make reproduce</code> from fixed seeds. Source: github.com/marvinoka4/vicinia. Apache-2.0.</footer>

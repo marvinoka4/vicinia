@@ -208,7 +208,7 @@ def sensitivity(df: pd.DataFrame, path: Path) -> Path:
     titles = {"feeder_kw": "feeder capacity (kW)", "loss_fraction": "distribution loss (fraction)", "reserve_soc": "S2 battery reserve (SoC)"}
     fig, axes = plt.subplots(1, 3, figsize=(9, 3), sharey=True)
     for ax, (param, label) in zip(axes, titles.items()):
-        sub = df[df.parameter == param]
+        sub = df[df.parameter == param].sort_values("value")
         ax.plot(sub["value"], sub["crit_coverage_outage_pct"], color=COLORS["S2"], lw=2, marker="o", ms=4, label="all sources")
         ax.plot(sub["value"], sub["crit_coverage_no_gen_pct"], color=COLORS["S2"], lw=2, ls="--", marker="o", ms=4, label="without generators")
         ax.set_xlabel(label)

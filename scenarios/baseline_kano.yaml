@@ -16,8 +16,9 @@ grid:
 sharing:
   feeder_kw: 25.0
   loss_fraction: 0.05
-  reserve_soc: 0.5
+  reserve_soc: 0.3
 prices:
   settlement_ngn_per_kwh: 600.0
+  battery_settlement_ngn_per_kwh: 1200.0
   grid_tariff_ngn_per_kwh: 209.5
   fuel_ngn_per_l: 1596.0

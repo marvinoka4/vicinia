@@ -131,7 +131,8 @@ def sensitivity(cfg: dict, days: int | None = None) -> pd.DataFrame:
     sweeps = {
         "feeder_kw": [5.0, 10.0, 25.0, 50.0, 100.0],
         "loss_fraction": [0.0, 0.05, 0.10, 0.20],
-        "reserve_soc": [0.2, 0.35, 0.5, 0.65, 0.8],
+        "reserve_soc": [0.2, 0.3, 0.4, 0.5, 0.65, 0.8],
+        "battery_settlement_ngn_per_kwh": [600.0, 900.0, 1200.0, 1500.0],
     }
     for param, values in sweeps.items():
         for v in values:
