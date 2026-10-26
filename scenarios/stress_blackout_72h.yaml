@@ -1,0 +1,13 @@
+name: stress_blackout_72h
+description: Total grid blackout for 72 hours starting at midnight on 10 March.
+seed: 7
+site: lagos
+start: "2026-03-01"
+days: 21
+households:
+  count: 50
+grid:
+  band: C
+events:
+  - {type: blackout, start: "2026-03-10 00:00", hours: 72}
+window: {start: "2026-03-10 00:00", days: 3}

@@ -1,0 +1,15 @@
+name: stress_contributor_dropout
+description: >
+  The household with the largest PV array leaves the sharing scheme on day 8
+  and stays disconnected for the rest of the run.
+seed: 7
+site: lagos
+start: "2026-03-01"
+days: 21
+households:
+  count: 50
+grid:
+  band: C
+events:
+  - {type: dropout, start: "2026-03-08 12:00", household: largest_pv}
+window: {start: "2026-03-08 12:00", days: 13}

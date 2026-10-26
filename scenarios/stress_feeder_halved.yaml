@@ -1,0 +1,13 @@
+name: stress_feeder_halved
+description: Shared feeder transfer capacity halved (25 kW to 12.5 kW) for 7 days.
+seed: 7
+site: lagos
+start: "2026-03-01"
+days: 21
+households:
+  count: 50
+grid:
+  band: C
+events:
+  - {type: feeder, start: "2026-03-08 00:00", hours: 168, multiplier: 0.5}
+window: {start: "2026-03-08 00:00", days: 7}
