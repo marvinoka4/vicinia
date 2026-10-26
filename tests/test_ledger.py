@@ -82,3 +82,10 @@ def test_buyer_pays_for_delivered_energy():
     assert e.amount_kobo == 38000
     s = led.statements(2)
     assert s.loc[0, "ngn_earned"] == 380.0 and s.loc[1, "ngn_paid"] == 380.0
+
+
+def test_statements_can_be_restricted_to_a_window():
+    led = build([(0, 0, 1, 1.0, 0.0), (5, 0, 1, 2.0, 0.0), (9, 1, 0, 4.0, 0.0)])
+    s = led.statements(2, slice(5, 9))
+    assert s.loc[0, "kwh_sold"] == 2.0 and s.loc[1, "kwh_sold"] == 0.0
+    assert s["ngn_net"].sum() == 0

@@ -26,9 +26,12 @@ def _win(r: SimResult) -> slice:
 
 
 def household_costs(r: SimResult) -> np.ndarray:
-    """Energy cost per household in NGN: grid + fuel + bought - sold."""
+    """Energy cost per household in NGN: grid + fuel + bought - sold.
+
+    Settlement payments are counted over the same window as grid and fuel.
+    """
     p = r.params
-    st = r.ledger.statements(r.fleet.n)
+    st = r.ledger.statements(r.fleet.n, r.extra.get("window"))
     return (
         r.hh["grid_kwh"] * p.grid_tariff_ngn_per_kwh
         + r.hh["fuel_l"] * p.fuel_ngn_per_l

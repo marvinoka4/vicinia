@@ -127,14 +127,18 @@ class Ledger:
         )
         return df
 
-    def statements(self, n_households: int) -> pd.DataFrame:
-        """Per-household totals over the whole ledger."""
+    def statements(self, n_households: int, intervals: slice | None = None) -> pd.DataFrame:
+        """Per-household totals, over the whole ledger or a range of intervals."""
+        lo = 0 if intervals is None or intervals.start is None else intervals.start
+        hi = None if intervals is None else intervals.stop
         sold = np.zeros(n_households)
         bought = np.zeros(n_households)
         paid = np.zeros(n_households, dtype=np.int64)
         earned = np.zeros(n_households, dtype=np.int64)
         n_tx = np.zeros(n_households, dtype=np.int64)
         for e in self.entries:
+            if e.interval < lo or (hi is not None and e.interval >= hi):
+                continue
             sold[e.sender] += e.kwh_sent
             bought[e.receiver] += e.kwh_received
             earned[e.sender] += e.amount_kobo
