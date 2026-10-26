@@ -155,3 +155,54 @@ def seed_sweep(cfg: dict, seeds, days: int | None = None) -> pd.DataFrame:
         df["seed"] = int(s)
         frames.append(df)
     return pd.concat(frames, ignore_index=True)
+
+
+def robustness(cfgs: list[dict], seeds, days: int | None = None) -> pd.DataFrame:
+    """S2 with the scenario's own defaults, against S0, for every seed and scenario.
+
+    Metrics cover each scenario's window (the stress window for pressure tests).
+    """
+    rows = []
+    for cfg in cfgs:
+        for s in seeds:
+            b = scenario.build(dict(cfg, seed=int(s)), days=days)
+            r0 = run_one(b, "S0")
+            r2 = run_one(b, "S2")
+            m0 = metrics.summarize(r0)
+            m2 = metrics.summarize(r2, r0)
+            worse = metrics.benefit_ngn(r2, r0) < -1.0
+            rows.append(
+                {
+                    "scenario": cfg["name"],
+                    "seed": int(s),
+                    "reserve_soc": r2.params.reserve_soc,
+                    "pv_price_ngn_per_kwh": r2.params.settlement_ngn_per_kwh,
+                    "battery_price_ngn_per_kwh": r2.params.battery_settlement_ngn_per_kwh,
+                    "s0_crit_coverage_outage_pct": m0["crit_coverage_outage_pct"],
+                    "crit_coverage_outage_pct": m2["crit_coverage_outage_pct"],
+                    "worst_household_crit_coverage_pct": m2["worst_household_crit_coverage_pct"],
+                    "households_worse_off": m2["households_worse_off"],
+                    "worse_off_with_generator": int((worse & (b.fleet.gen_kw > 0)).sum()),
+                    "worse_off_archetypes": ";".join(sorted(set(b.fleet.archetype[worse]))),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+DEFAULT_CHOICES = {
+    "original: 50% reserve, flat 600 NGN/kWh": {"reserve_soc": 0.5, "battery_settlement_ngn_per_kwh": 600.0},
+    "50% reserve, two-tier 600/1,200 NGN/kWh": {"reserve_soc": 0.5, "battery_settlement_ngn_per_kwh": 1200.0},
+    "30% reserve, flat 600 NGN/kWh": {"reserve_soc": 0.3, "battery_settlement_ngn_per_kwh": 600.0},
+    "chosen: 30% reserve, two-tier 600/1,200 NGN/kWh": {"reserve_soc": 0.3, "battery_settlement_ngn_per_kwh": 1200.0},
+}
+
+
+def defaults_comparison(b: scenario.Built, s0: SimResult | None = None) -> pd.DataFrame:
+    """S2 under the original and the chosen reserve and pricing, same inputs."""
+    s0 = s0 or run_one(b, "S0")
+    rows = []
+    for label, over in DEFAULT_CHOICES.items():
+        r = run_one(b, "S2", **over)
+        m = metrics.summarize(r, s0)
+        rows.append({"setting": label, **over, **m})
+    return pd.DataFrame(rows)
