@@ -149,7 +149,44 @@ def _intro(base, stress, sens, rt, led, quick) -> list[str]:
     return lines
 
 
-def write_report_md(out: Path, base, stress, sens, rt, led, quick) -> Path:
+def seed_summary(seeds: pd.DataFrame) -> pd.DataFrame:
+    s0 = seeds[seeds.run == "S0"].set_index("seed")["fuel_l"]
+    seeds = seeds.assign(fuel_cut_pct=[100 * (1 - r.fuel_l / s0[r.seed]) for r in seeds.itertuples()])
+    rows = []
+    for run, g in seeds.groupby("run", sort=False):
+        row = {"run": run, "n": len(g)}
+        for c in ("crit_coverage_outage_pct", "worst_household_crit_coverage_pct", "fuel_cut_pct"):
+            row[c + "_mean"] = g[c].mean()
+            row[c + "_min"] = g[c].min()
+            row[c + "_max"] = g[c].max()
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def _seed_rows(seeds: pd.DataFrame) -> pd.DataFrame:
+    ss = seed_summary(seeds)
+    rng = lambda r, c: f"{r[c + '_mean']:.1f} ({r[c + '_min']:.1f} to {r[c + '_max']:.1f})"  # noqa: E731
+    return pd.DataFrame(
+        {
+            "run": ss["run"],
+            "n": ss["n"],
+            "cov": [rng(r, "crit_coverage_outage_pct") for _, r in ss.iterrows()],
+            "worst": [rng(r, "worst_household_crit_coverage_pct") for _, r in ss.iterrows()],
+            "fuel": [rng(r, "fuel_cut_pct") for _, r in ss.iterrows()],
+        }
+    )
+
+
+SEED_COLS = [
+    ("run", "Strategy", None),
+    ("n", "Seeds", "{:d}"),
+    ("cov", "Critical coverage, mean (min to max) %", "{}"),
+    ("worst", "Worst household, mean (min to max) %", "{}"),
+    ("fuel", "Fuel cut vs S0, mean (min to max) %", "{}"),
+]
+
+
+def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None) -> Path:
     lag = base[base.scenario == "baseline_lagos"]
     sp = stress_pivot(stress)
     lines = ["# vicinia results", ""]
@@ -213,6 +250,12 @@ def write_report_md(out: Path, base, stress, sens, rt, led, quick) -> Path:
         "",
         "![Sensitivity](figures/sensitivity_lagos.png)",
         "",
+        "## Seed-to-seed variation (Lagos)",
+        "",
+        "Each seed draws a new fleet, new load profiles, new weather and a new grid schedule.",
+        "",
+        md_table(_seed_rows(seeds), SEED_COLS) if seeds is not None else "Not run.",
+        "",
         "## Runtime",
         "",
         md_table(
@@ -265,7 +308,7 @@ def _img(path: Path, caption: str) -> str:
     )
 
 
-def write_report_html(out: Path, base, stress, sens, rt, led, quick) -> Path:
+def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None) -> Path:
     f = _facts(base, stress, sens, rt, led)
     s0, s1, s2, lag = f["s0"], f["s1"], f["s2"], f["lagos"]
     fig = out / "figures"
@@ -305,6 +348,9 @@ def write_report_html(out: Path, base, stress, sens, rt, led, quick) -> Path:
 {html_table(sp, STRESS_COLS)}
 {_img(fig / 'stress_tests.png', 'Critical coverage during each stress window. Hollow circles show the same window without the stress event.')}
 {_img(fig / 'blackout_72h.png', 'The 72-hour blackout in detail: critical load served and total stored battery energy.')}
+<h2>Seed-to-seed variation (Lagos)</h2>
+<p class="lede">Each seed draws a new fleet, new load profiles, new weather and a new grid schedule.</p>
+{html_table(_seed_rows(seeds), SEED_COLS) if seeds is not None else ''}
 <h2>Sensitivity of S2</h2>
 {_img(fig / 'sensitivity_lagos.png', 'One-at-a-time sensitivity of S2 critical coverage to feeder capacity, distribution losses and battery reserve.')}
 <h2>Settlement ledger</h2>

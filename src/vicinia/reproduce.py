@@ -17,6 +17,7 @@ from . import figures, html, scenario
 from .ledger import Ledger
 
 BASELINES = ["baseline_lagos", "baseline_abuja", "baseline_kano"]
+SEEDS = [42, 101, 202, 303, 404]
 STRESS = [
     "stress_blackout_72h",
     "stress_harmattan_week",
@@ -159,9 +160,14 @@ def run(root: str | Path = ".", out: str | Path = "results", quick: bool = False
     figures.sensitivity(sens, figdir / "sensitivity_lagos.png")
     log("sensitivity: done")
 
+    # 7. Seed-to-seed variation for Lagos.
+    seeds = ex.seed_sweep(cfg, SEEDS[:2] if quick else SEEDS, days=days_base)
+    _round(seeds).to_csv(out / "seed_variation_lagos.csv", index=False)
+    log("seed sweep: done")
+
     summary["total_s"] = time.perf_counter() - t_all
-    html.write_report_md(out, base, stress, sens, rt, led_sum, quick)
-    html.write_report_html(out, base, stress, sens, rt, led_sum, quick)
+    html.write_report_md(out, base, stress, sens, rt, led_sum, quick, seeds)
+    html.write_report_html(out, base, stress, sens, rt, led_sum, quick, seeds)
     log(f"reproduce finished in {summary['total_s']:.0f} s; outputs in {out}")
     return summary
 

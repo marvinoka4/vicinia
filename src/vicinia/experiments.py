@@ -143,3 +143,14 @@ def sensitivity(cfg: dict, days: int | None = None) -> pd.DataFrame:
             m = metrics.summarize(r, s0)
             rows.append({"parameter": param, "value": v, **m})
     return pd.DataFrame(rows)
+
+
+def seed_sweep(cfg: dict, seeds, days: int | None = None) -> pd.DataFrame:
+    """Repeat S0, S1 and S2 with different seeds (new fleet, loads, weather and grid)."""
+    frames = []
+    for s in seeds:
+        b = scenario.build(dict(cfg, seed=int(s)), days=days)
+        df, _ = compare(b, runs=("S0", "S1", "S2"), with_pooled=False)
+        df["seed"] = int(s)
+        frames.append(df)
+    return pd.concat(frames, ignore_index=True)
