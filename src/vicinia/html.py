@@ -142,7 +142,7 @@ def _intro(base, stress, sens, rt, led, quick) -> list[str]:
         "comes from routing stored energy to neighbours' critical loads.",
         f"- Settlement ledger for S2: {led['entries']:,} hash-chained entries, verify() = {led['verified']}, "
         f"altering one entry detected = {led['tamper_detected']}, largest daily netting imbalance = {led['daily_netting_max_abs_kobo']} kobo.",
-        f"- Runtime for one simulated year ({f['days']:.0f} days, 15-minute steps, 50 households): "
+        f"- Runtime for the Lagos run ({f['days']:.0f} days, 15-minute steps, 50 households): "
         f"{f['runtime_max']:.1f} s or less per strategy on {rt['machine'].iloc[0]}.",
         "",
     ]

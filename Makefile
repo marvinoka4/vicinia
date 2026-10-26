@@ -18,4 +18,4 @@ check-dashes:
 	$(PY) scripts/check_no_em_dash.py
 
 screenshots:
-	$(PY) scripts/screenshot_report.py results/report.html docs/img
+	node scripts/screenshot_report.cjs results/report.html docs/img
