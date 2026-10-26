@@ -10,10 +10,13 @@ All inputs are synthetic (see docs/assumptions.md). These are model results, not
 - Critical coverage from PV, batteries and sharing alone (no generator): S0 42.2%, S2 96.3%, against 100.0% for a lossless pooled reference with the same equipment.
 - The S2 battery reserve without sharing (S2-local) gives 68.8%, and S2 without battery sharing gives 76.9%, so most of the S2 gain comes from routing stored energy to neighbours' critical loads.
 - Households worse off than under islanded operation over the year: S1 0, S2 0 of 50. Gini of benefit: S1 0.26, S2 0.27.
+- Across all seeds and pressure tests, S2 left between 0 and 17 households worse off than islanded, all solar-battery donors (see Robustness below).
 - Settlement ledger for S2: 786,978 hash-chained entries, verify() = True, altering one entry detected = True, largest daily netting imbalance = 0 kobo.
-- Runtime for the Lagos run (365 days, 15-minute steps, 50 households): 10.4 s or less per strategy on x86_64 CPython 3.11.17.
+- Runtime for the Lagos run (365 days, 15-minute steps, 50 households): 10.3 s or less per strategy on x86_64 CPython 3.11.17.
+- Abuja and Kano runs, with the same fleet, loads and grid schedule, give near-identical results because shortfalls fall mostly at night, so battery capacity and outage timing dominate irradiance.
+- Costs use petrol at 1,596 NGN/L (NBS average, May 2026). The fuel price affects only NGN figures, not coverage or fuel volume.
 
-![Critical coverage by site](figures/coverage_by_site.png)
+![Critical coverage, Lagos](figures/coverage_lagos.png)
 
 ## Strategy comparison, Lagos
 
@@ -31,22 +34,6 @@ Gini of benefit is computed over per-household benefit relative to S0 (cost savi
 ![Per-household coverage](figures/household_coverage_lagos.png)
 
 ![One week in Lagos](figures/week_lagos.png)
-
-## By site
-
-| Site | Strategy | Critical coverage (%) | Worst household (%) | Fuel (L) | CO2 (t) | PV curtailed (kWh) |
-|---|---|---:|---:|---:|---:|---:|
-| lagos | S0 islanded | 68.4 | 0.0 | 25,684 | 58.3 | 48,600 |
-| lagos | S1 greedy | 76.2 | 15.7 | 22,396 | 50.8 | 43,816 |
-| lagos | S2 critical-first | 98.1 | 93.8 | 18,053 | 41.0 | 40,296 |
-| abuja | S0 islanded | 68.4 | 0.0 | 25,676 | 58.3 | 53,915 |
-| abuja | S1 greedy | 76.4 | 16.2 | 22,247 | 50.5 | 48,972 |
-| abuja | S2 critical-first | 98.1 | 93.9 | 17,922 | 40.7 | 45,238 |
-| kano | S0 islanded | 68.4 | 0.0 | 25,672 | 58.3 | 59,873 |
-| kano | S1 greedy | 76.7 | 16.8 | 22,099 | 50.2 | 54,732 |
-| kano | S2 critical-first | 98.2 | 94.0 | 17,795 | 40.4 | 50,906 |
-
-![Fuel by site](figures/fuel_by_site.png)
 
 ## Pressure tests
 
@@ -100,14 +87,38 @@ Feeder note: peak transfer in the feeder test window without stress was 7.4 kW, 
 
 ## Settlement price for battery energy
 
-PV surplus that would otherwise be curtailed is settled at the base price. Energy a donor discharges from its battery has an opportunity cost (the donor may later need its generator), so it can carry a higher price. Dispatch does not change with price; only who gains does.
-
 | Battery energy price (NGN/kWh) | Households worse off than S0 | Gini of benefit |
 |---:|---:|---:|
 | 600 | 3 | 0.25 |
 | 900 | 1 | 0.21 |
 | 1,200 | 0 | 0.27 |
 | 1,500 | 0 | 0.39 |
+
+## How the defaults were chosen
+
+The S2 battery reserve and the settlement prices were set after a sensitivity sweep on the Lagos baseline (seed 42), not before it. The first version used a 50% reserve and one flat price of 600 NGN/kWh. A higher reserve lowered critical coverage and left more donors worse off, so the reserve was lowered to 30%. With a flat price, battery donors subsidise their neighbours: they sell stored energy at 600 NGN/kWh and later serve less of their own load or refill it with petrol at about 1,556 NGN/kWh. Pricing battery-sourced energy at 1,200 NGN/kWh, with PV surplus kept at 600 NGN/kWh, removes that transfer on this seed. In the sweep figure the reserve is varied at the two-tier price and the price at a 30% reserve. Dispatch does not depend on price, so coverage and fuel do not change with it; only who gains does.
+
+| S2 setting | Critical coverage (%) | Worst household (%) | Fuel (L) | Households worse off than S0 | Gini of benefit |
+|---|---:|---:|---:|---:|---:|
+| original: 50% reserve, flat 600 NGN/kWh | 95.3 | 82.7 | 20,302 | 11 | 0.37 |
+| 50% reserve, two-tier 600/1,200 NGN/kWh | 95.3 | 82.7 | 20,302 | 4 | 0.29 |
+| 30% reserve, flat 600 NGN/kWh | 98.1 | 93.8 | 18,053 | 3 | 0.25 |
+| chosen: 30% reserve, two-tier 600/1,200 NGN/kWh | 98.1 | 93.8 | 18,053 | 0 | 0.27 |
+
+![Defaults sweep](figures/defaults_sweep_lagos.png)
+
+## Robustness of the chosen defaults
+
+S2 with the chosen defaults (30% reserve, 600/1,200 NGN/kWh) against S0, for five seeds on the Lagos baseline year and on every pressure test. Pressure-test metrics cover the stress window only. Every household left worse off is a solar-battery donor. Full table: `robustness_S2.csv`.
+
+| Scenario | Seeds | S0 critical coverage (%) | S2 critical coverage (%) | S2 worst household (%) | Households worse off, per seed | Of which own a generator |
+|---|---:|---:|---:|---:|---:|---:|
+| Lagos baseline, full year | 5 | 68.4 to 82.1 | 98.1 to 99.0 | 92.0 to 94.7 | 0, 0, 0, 4, 0 | 0, 0, 0, 4, 0 |
+| blackout 72h | 5 | 67.6 to 79.5 | 94.1 to 97.5 | 69.4 to 87.0 | 3, 4, 4, 10, 3 | 3, 4, 2, 9, 3 |
+| harmattan week | 5 | 69.8 to 82.3 | 96.7 to 99.7 | 88.5 to 98.4 | 3, 3, 0, 4, 0 | 3, 2, 0, 4, 0 |
+| contributor dropout | 5 | 68.9 to 82.4 | 97.4 to 100.0 | 90.4 to 100.0 | 1, 1, 1, 0, 0 | 1, 1, 0, 0, 0 |
+| feeder halved | 5 | 68.9 to 83.0 | 97.1 to 99.9 | 90.2 to 99.7 | 1, 0, 0, 2, 0 | 1, 0, 0, 2, 0 |
+| comm loss | 5 | 71.1 to 83.3 | 71.6 to 83.6 | 0.0 to 0.0 | 3, 17, 15, 15, 0 | 1, 10, 5, 10, 0 |
 
 ## Seed-to-seed variation (Lagos)
 
@@ -123,8 +134,8 @@ Each seed draws a new fleet, new load profiles, new weather and a new grid sched
 
 | Strategy | Days | Households | Intervals | Runtime (s) | Ledger entries |
 |---|---:|---:|---:|---:|---:|
-| S0 islanded | 365 | 50 | 35,040 | 2.71 | 0 |
-| S1 greedy | 365 | 50 | 35,040 | 4.46 | 186,241 |
-| S2 critical-first | 365 | 50 | 35,040 | 10.40 | 786,978 |
+| S0 islanded | 365 | 50 | 35,040 | 2.69 | 0 |
+| S1 greedy | 365 | 50 | 35,040 | 4.21 | 186,241 |
+| S2 critical-first | 365 | 50 | 35,040 | 10.34 | 786,978 |
 
 Generated by `make reproduce`. Do not edit by hand.
