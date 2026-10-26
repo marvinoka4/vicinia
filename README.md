@@ -80,6 +80,12 @@ about 51% of the time):
 | S1 greedy | 76.2% | 15.7% | 22,396 | 50.8 | 4,557 | 0 |
 | S2 critical-first | 98.1% | 93.8% | 18,053 | 41.0 | 13,447 | 0 |
 
+Lagos is the headline case. Abuja and Kano runs, with the same fleet, loads
+and grid schedule, give near-identical results because shortfalls fall
+mostly at night, so battery capacity and outage timing dominate irradiance.
+Costs use petrol at 1,596 NGN/L (NBS average, May 2026); the fuel price
+affects only NGN figures, not coverage or fuel volume.
+
 - S2 cuts generator fuel by 29.7% against islanded operation (17.3 t CO2
   per year for 50 homes). Over five seeds the cut ranges from 23.6% to 32.9%
   and S2 critical coverage from 98.1% to 99.0%.
@@ -91,10 +97,6 @@ about 51% of the time):
   and S2 without battery sharing gives 76.9%. Most of the S2 gain comes from
   routing stored energy above the donor's reserve to neighbours' critical
   loads.
-- Results for Abuja and Kano are within 0.5 points of Lagos on coverage.
-  All three use the same fleet, loads and grid schedule, so only the solar
-  resource differs; outage deficits are mostly at night, when storage, not
-  PV, is the limit.
 
 **Pressure tests** (critical coverage during the stress window, S0 / S1 / S2):
 
@@ -106,10 +108,11 @@ about 51% of the time):
 | Feeder capacity halved | 72.3% | 83.9% | 99.5% | 99.5% |
 | Communication loss, 48 h | 71.4% | 71.4% | 72.0% | 98.3% |
 
-Sharing never did worse than islanded under any stress. During
-communication loss there are no transfers and no ledger entries; every home
-falls back to its own PV, battery and generator, which is the safe outcome
-and equals S0. Halving the feeder had no effect because peak transfers were
+On critical coverage, sharing never did worse than islanded under any
+stress. During communication loss there are no transfers and no ledger
+entries; every home falls back to its own PV, battery and generator, which
+is the safe outcome, and coverage is close to S0 (S2 homes keep their local
+battery reserve). Halving the feeder had no effect because peak transfers were
 7.4 kW, below the halved 12.5 kW limit. Over the full year the peak was
 7.9 kW; at a 5 kW limit S2 coverage falls only from 98.1% to 97.8%.
 
@@ -119,21 +122,60 @@ netting balances to 0 kobo.
 
 **Runtime**: one simulated year for 50 households takes 2.7 s (S0), 4.5 s
 (S1) and 10.4 s (S2) on one CPU core of the build machine
-(`results/runtime.csv`). A full `make reproduce` takes about 7.5 minutes.
+(`results/runtime.csv`). A full `make reproduce` takes about 10 minutes.
 
-![Critical coverage by site](results/figures/coverage_by_site.png)
+![Critical coverage, Lagos](results/figures/coverage_lagos.png)
 ![Pressure tests](results/figures/stress_tests.png)
 
-Two parameter choices were made after looking at the sensitivity sweep, and
-both sweeps are published. First, the S2 battery reserve was lowered from
-50% to 30%: higher reserves lowered coverage, including in the blackout
-test. Second, battery-sourced energy is priced at 1,200 NGN/kWh against
-600 NGN/kWh for PV surplus. With a single 600 NGN/kWh price, 3 solar-battery
-donors ended the year worse off than islanded; at 1,200 NGN/kWh none did.
+### How the defaults were chosen
+
+The S2 battery reserve (30%) and the two-tier settlement price (600 NGN/kWh
+for PV surplus, 1,200 NGN/kWh for battery energy) were set after a
+sensitivity sweep on the Lagos baseline, not before it. The finding behind
+the pricing: with one flat price, battery donors subsidise their
+neighbours. They sell stored energy at 600 NGN/kWh and later serve less of
+their own load or refill it with petrol at about 1,556 NGN/kWh. Pricing
+battery energy separately removes that transfer on the sweep seed.
+Coverage and fuel do not depend on price; only who gains does.
+
+| S2 setting (Lagos, seed 42, one year) | Critical coverage | Worst-off household | Households worse off than S0 |
+|---|---:|---:|---:|
+| Original: 50% reserve, flat 600 NGN/kWh | 95.3% | 82.7% | 11 |
+| 50% reserve, two-tier price | 95.3% | 82.7% | 4 |
+| 30% reserve, flat 600 NGN/kWh | 98.1% | 93.8% | 3 |
+| Chosen: 30% reserve, two-tier price | 98.1% | 93.8% | 0 |
+
+Sweep figures: [defaults_sweep_lagos.png](results/figures/defaults_sweep_lagos.png)
+and [sensitivity_lagos.png](results/figures/sensitivity_lagos.png); data in
+`results/defaults_comparison_lagos.csv` and `results/sensitivity_lagos_S2.csv`.
+
+### Robustness of the chosen defaults
+
+The chosen defaults were not retuned for other seeds or scenarios. S2
+against S0 for five seeds (`results/robustness_S2.csv`):
+
+| Scenario | S2 critical coverage | S2 worst-off household | Households worse off than S0, per seed |
+|---|---:|---:|---:|
+| Lagos baseline, full year | 98.1 to 99.0% | 92.0 to 94.7% | 0, 0, 0, 4, 0 |
+| 72-hour blackout | 94.1 to 97.5% | 69.4 to 87.0% | 3, 4, 4, 10, 3 |
+| Harmattan week | 96.7 to 99.7% | 88.5 to 98.4% | 3, 3, 0, 4, 0 |
+| Contributor drops out | 97.4 to 100.0% | 90.4 to 100.0% | 1, 1, 1, 0, 0 |
+| Feeder halved | 97.1 to 99.9% | 90.2 to 99.7% | 1, 0, 0, 2, 0 |
+| Communication loss | 71.6 to 83.6% | 0.0% | 3, 17, 15, 15, 0 |
+
+The two-tier price does not remove donor losses everywhere. Every household
+left worse off is a solar-battery donor. On the full year, one seed in five
+leaves 4 donors worse off; all four own generators and refill their own
+load with petrol that costs more per kWh than the 1,200 NGN/kWh they earn.
+In the pressure tests up to 10 donors are worse off over the stress window,
+and up to 17 during communication loss, when donors enter the window with
+less stored energy than islanded homes and keep their reserve. Short
+windows do not value energy left in batteries at the end, so these window
+counts overstate the loss somewhat; they are reported as measured.
 
 ## Tests
 
-`make test` runs 44 tests. Property-based tests (hypothesis) generate
+`make test` runs 45 tests. Property-based tests (hypothesis) generate
 random small neighbourhoods and check, for every strategy and every
 interval:
 
