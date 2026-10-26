@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-EM_DASH = "—"
+EM_DASH = chr(0x2014)
 
 
 def main() -> int:
