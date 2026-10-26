@@ -92,7 +92,7 @@ HH_FIELDS = (
     "pv_kwh", "curtailed_kwh", "grid_kwh", "gen_kwh", "gen_hours", "fuel_l",
     "sent_kwh", "received_kwh", "batt_charge_kwh", "batt_discharge_kwh",
     "crit_load_kwh", "crit_served_kwh", "nonc_load_kwh", "nonc_served_kwh",
-    "out_crit_load_kwh", "out_crit_served_kwh", "out_nonc_load_kwh", "out_nonc_served_kwh",
+    "out_crit_load_kwh", "out_crit_served_kwh", "out_crit_gen_kwh", "out_nonc_load_kwh", "out_nonc_served_kwh",
     "soc_min_kwh", "soc_max_kwh",
 )
 TS_FIELDS = (
@@ -176,6 +176,7 @@ def simulate(
         dis = zeros
         grid = zeros
         gen_out = zeros
+        gc = zeros
         outage = not inp.grid_on[t]
 
         if not outage:
@@ -315,6 +316,7 @@ def simulate(
         if outage:
             hh["out_crit_load_kwh"] += c
             hh["out_crit_served_kwh"] += crit_served
+            hh["out_crit_gen_kwh"] += gc
             hh["out_nonc_load_kwh"] += nn
             hh["out_nonc_served_kwh"] += nonc_served
 

@@ -21,6 +21,10 @@ def _ratio(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.divide(a, b, out=np.ones_like(a, dtype=float), where=b > 1e-12)
 
 
+def _win(r: SimResult) -> slice:
+    return r.extra.get("window") or slice(None)
+
+
 def household_costs(r: SimResult) -> np.ndarray:
     """Energy cost per household in NGN: grid + fuel + bought - sold."""
     p = r.params
@@ -49,6 +53,8 @@ def summarize(r: SimResult, ref: SimResult | None = None) -> dict:
         "households": r.fleet.n,
         "crit_coverage_outage_pct": 100 * h["out_crit_served_kwh"].sum() / out_load if out_load > 0 else 100.0,
         "crit_coverage_all_pct": 100 * h["crit_served_kwh"].sum() / h["crit_load_kwh"].sum(),
+        "crit_coverage_no_gen_pct": 100 * (h["out_crit_served_kwh"] - h["out_crit_gen_kwh"]).sum() / out_load
+        if out_load > 0 else 100.0,
         "worst_household_crit_coverage_pct": 100 * float(cov.min()),
         "households_below_90pct_crit": int((cov < 0.9).sum()),
         "unserved_crit_kwh": float((h["crit_load_kwh"] - h["crit_served_kwh"]).sum()),
@@ -63,6 +69,7 @@ def summarize(r: SimResult, ref: SimResult | None = None) -> dict:
         "mean_household_cost_ngn": float(cost.mean()),
         "shared_delivered_kwh": float(h["received_kwh"].sum()),
         "losses_kwh": float(h["sent_kwh"].sum() - h["received_kwh"].sum()),
+        "peak_transfer_kw": float(r.ts["shared_sent_kwh"][_win(r)].max(initial=0.0) / r.inputs.dt_h),
         "pv_kwh": float(h["pv_kwh"].sum()),
         "curtailed_kwh": float(h["curtailed_kwh"].sum()),
         "ledger_entries": len(r.ledger.entries),
