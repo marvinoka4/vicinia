@@ -96,9 +96,9 @@ It mirrors how backup systems are commonly wired in Nigerian homes (an
 | Item | Value | Basis |
 |---|---|---|
 | Grid tariff | 209.50 NGN/kWh | Band A tariff from July 2024 as reported by Arise News, https://www.arise.tv/power-distribution-companies-raise-tariffs-for-band-a-customers-from-n206-80-kwh-to-n209-5-kwh/ . Bands B to E pay less; using Band A overstates grid cost for a Band C feeder. It only affects the cost metric. |
-| Petrol price | 1,596 NGN/L | National Bureau of Statistics average for May 2026 as reported by Legit.ng, https://www.legit.ng/business-economy/energy/1716120-nbs-reports-petrol-price-climbs-5531-n1596litre-2026/ . Prices moved fast in 2026 (about 1,035 NGN/L in January). |
+| Petrol price | 1,596 NGN/L (NBS average, May 2026) | Affects only NGN figures, not coverage or fuel volume. National Bureau of Statistics average for May 2026 as reported by Legit.ng, https://www.legit.ng/business-economy/energy/1716120-nbs-reports-petrol-price-climbs-5531-n1596litre-2026/ . Prices moved fast in 2026 (about 1,035 NGN/L in January). |
 | Settlement price, PV surplus | 600 NGN/kWh | **Assumption.** Must lie between the grid tariff and the generator cost per kWh; the scenario loader rejects values outside that range. The buyer pays for energy delivered, so the seller bears distribution losses. |
-| Settlement price, battery energy | 1,200 NGN/kWh | Parameter. Battery energy has an opportunity cost for the donor. With a single 600 NGN/kWh price, 3 of 50 households (all solar-battery donors) ended the Lagos year worse off than islanded; at 1,200 NGN/kWh none did. The price sweep is published in `results/sensitivity_lagos_S2.csv`. |
+| Settlement price, battery energy | 1,200 NGN/kWh | Parameter. Battery energy has an opportunity cost for the donor. With a single 600 NGN/kWh price, 3 of 50 households (all solar-battery donors) ended the Lagos year (seed 42) worse off than islanded; at 1,200 NGN/kWh none did. The price sweep is published in `results/sensitivity_lagos_S2.csv`. With other seeds and in the pressure tests some donors are still worse off; see `results/robustness_S2.csv`. |
 | Money unit in ledger | Integer kobo | Design choice so that netting is exact. |
 
 ## Generators and emissions

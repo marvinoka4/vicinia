@@ -70,6 +70,10 @@ headline numbers.
 
 ## Results in this repository
 
-- Results come from one seed per scenario. Seed-to-seed variation has not
-  been quantified with repeated runs yet.
+- Seed variation is covered by five seeds for the Lagos baseline and each
+  pressure test (`results/robustness_S2.csv`, `results/seed_variation_lagos.csv`).
+  Five seeds show the spread but are not a full uncertainty analysis.
+- Over short pressure-test windows, the benefit metric does not value the
+  energy left in batteries at the end of the window, which can make
+  donors look worse off than they would over a longer period.
 - Runtimes depend on the machine and are reported for information only.
