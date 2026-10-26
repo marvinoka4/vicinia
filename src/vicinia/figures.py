@@ -57,48 +57,24 @@ def _save(fig, path: Path) -> Path:
     return path
 
 
-def coverage_by_site(df: pd.DataFrame, path: Path) -> Path:
+def coverage_lagos(df: pd.DataFrame, path: Path) -> Path:
     runs = ["S0", "S1", "S2"]
-    sites = list(dict.fromkeys(df["scenario"]))
-    fig, ax = plt.subplots(figsize=(7.5, 3.6))
-    width = 0.26
-    x = np.arange(len(sites))
-    for i, run in enumerate(runs):
-        vals = [float(df[(df.scenario == s) & (df.run == run)]["crit_coverage_outage_pct"].iloc[0]) for s in sites]
-        worst = [float(df[(df.scenario == s) & (df.run == run)]["worst_household_crit_coverage_pct"].iloc[0]) for s in sites]
-        xs = x + (i - 1) * width
-        ax.bar(xs, vals, width - 0.03, color=COLORS[run], label=LABELS[run], zorder=2)
-        ax.scatter(xs, worst, marker="_", s=180, color=INK, zorder=3, linewidths=2)
-        for xx, v in zip(xs, vals):
-            ax.text(xx, v + 1.5, f"{v:.0f}", ha="center", va="bottom", color=INK, fontsize=8)
-    ax.scatter([], [], marker="_", s=180, color=INK, linewidths=2, label="worst-off household")
-    ax.set_xticks(x, [s.replace("baseline_", "").title() for s in sites])
-    ax.set_ylim(0, 110)
-    ax.set_ylabel("critical load served during outages (%)")
-    ax.set_title("Critical-load coverage during grid outages, one year, 50 households")
-    ax.legend(ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.1))
-    ax.grid(axis="x", visible=False)
-    return _save(fig, path)
-
-
-def fuel_by_site(df: pd.DataFrame, path: Path) -> Path:
-    runs = ["S0", "S1", "S2"]
-    sites = list(dict.fromkeys(df["scenario"]))
+    sub = df[df.scenario == "baseline_lagos"].set_index("run")
     fig, ax = plt.subplots(figsize=(7.5, 3.4))
-    width = 0.26
-    x = np.arange(len(sites))
-    for i, run in enumerate(runs):
-        sub = [df[(df.scenario == s) & (df.run == run)].iloc[0] for s in sites]
-        vals = [r["fuel_l"] / 1000 for r in sub]
-        xs = x + (i - 1) * width
-        ax.bar(xs, vals, width - 0.03, color=COLORS[run], label=LABELS[run], zorder=2)
-        for xx, r in zip(xs, sub):
-            ax.text(xx, r["fuel_l"] / 1000 + 0.3, f"{r['co2_kg'] / 1000:.0f} t", ha="center", va="bottom", color=INK2, fontsize=7.5)
-    ax.set_xticks(x, [s.replace("baseline_", "").title() for s in sites])
-    ax.set_ylabel("generator fuel per year (thousand litres)")
-    ax.set_title("Generator fuel use (labels: tonnes CO2)")
-    ax.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.1))
-    ax.grid(axis="x", visible=False)
+    y = np.arange(len(runs))[::-1]
+    for yy, run in zip(y, runs):
+        v = float(sub.loc[run, "crit_coverage_outage_pct"])
+        w = float(sub.loc[run, "worst_household_crit_coverage_pct"])
+        ax.barh(yy, v, 0.55, color=COLORS[run], zorder=2)
+        ax.scatter([w], [yy], marker="|", s=260, color=INK, zorder=3, linewidths=2)
+        ax.text(v + 1, yy, f"{v:.1f}%", va="center", color=INK, fontsize=9)
+    ax.scatter([], [], marker="|", s=120, color=INK, linewidths=2, label="worst-off household")
+    ax.set_yticks(y, [LABELS[r] for r in runs])
+    ax.set_xlim(0, 108)
+    ax.set_xlabel("critical load served during grid outages (%)")
+    ax.set_title("Lagos, 50 households, one year: critical-load coverage in outages")
+    ax.legend(loc="lower right")
+    ax.grid(axis="y", visible=False)
     return _save(fig, path)
 
 
@@ -219,4 +195,21 @@ def sensitivity(df: pd.DataFrame, path: Path) -> Path:
     axes[0].set_ylabel("S2 critical coverage (%)")
     axes[0].set_title("Sensitivity of S2 (Lagos, one year)")
     axes[2].legend(loc="lower left")
+    return _save(fig, path)
+
+
+def defaults_sweep(df: pd.DataFrame, path: Path) -> Path:
+    """Households worse off than islanded, against S2 reserve and battery energy price."""
+    fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=True)
+    for ax, (param, label, chosen) in zip(
+        axes,
+        [("reserve_soc", "S2 battery reserve (SoC)", 0.3), ("battery_settlement_ngn_per_kwh", "battery energy price (NGN/kWh)", 1200.0)],
+    ):
+        sub = df[df.parameter == param].sort_values("value")
+        ax.plot(sub["value"], sub["households_worse_off"], color=COLORS["S2"], lw=2, marker="o", ms=4)
+        ax.axvline(chosen, color=INK2, lw=1, ls=":")
+        ax.annotate("chosen", xy=(chosen, ax.get_ylim()[1]), xytext=(4, -12), textcoords="offset points", color=INK2, fontsize=8)
+        ax.set_xlabel(label)
+    axes[0].set_ylabel("households worse off than S0")
+    axes[0].set_title("How the S2 defaults were chosen (Lagos, one year)")
     return _save(fig, path)

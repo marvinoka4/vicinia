@@ -132,8 +132,7 @@ def run(root: str | Path = ".", out: str | Path = "results", quick: bool = False
     ).round(3).to_csv(out / "fleet_lagos.csv", index=False)
 
     # 4. Figures for the baseline.
-    figures.coverage_by_site(base, figdir / "coverage_by_site.png")
-    figures.fuel_by_site(base, figdir / "fuel_by_site.png")
+    figures.coverage_lagos(base, figdir / "coverage_lagos.png")
     figures.household_coverage(res, figdir / "household_coverage_lagos.png")
     start = int(b.inputs.times.searchsorted(pd.Timestamp("2026-01-12", tz=b.inputs.times.tz))) if not quick else 0
     figures.week_timeseries(res, start, figdir / "week_lagos.png", "One week in Lagos (12 to 18 January)")
@@ -158,6 +157,9 @@ def run(root: str | Path = ".", out: str | Path = "results", quick: bool = False
     sens = ex.sensitivity(cfg, days=days_base)
     _round(sens).to_csv(out / "sensitivity_lagos_S2.csv", index=False)
     figures.sensitivity(sens, figdir / "sensitivity_lagos.png")
+    figures.defaults_sweep(sens, figdir / "defaults_sweep_lagos.png")
+    choices = ex.defaults_comparison(b, res["S0"])
+    _round(choices).to_csv(out / "defaults_comparison_lagos.csv", index=False)
     log("sensitivity: done")
 
     # 7. Seed-to-seed variation for Lagos.
@@ -165,9 +167,17 @@ def run(root: str | Path = ".", out: str | Path = "results", quick: bool = False
     _round(seeds).to_csv(out / "seed_variation_lagos.csv", index=False)
     log("seed sweep: done")
 
+    # 8. Robustness of the chosen S2 defaults across seeds and pressure tests.
+    rob_cfgs = [cfg] + [scenario.load(root / "scenarios" / f"{n}.yaml") for n in STRESS]
+    # The quick run skips the year-long baseline here to stay fast.
+    rob = ex.robustness(rob_cfgs[1:], SEEDS[:2]) if quick else ex.robustness(rob_cfgs, SEEDS)
+    _round(rob).to_csv(out / "robustness_S2.csv", index=False)
+    log("robustness: done")
+
     summary["total_s"] = time.perf_counter() - t_all
-    html.write_report_md(out, base, stress, sens, rt, led_sum, quick, seeds)
-    html.write_report_html(out, base, stress, sens, rt, led_sum, quick, seeds)
+    extra = {"seeds": seeds, "rob": rob, "choices": choices, "prices": cfg["prices"]}
+    html.write_report_md(out, base, stress, sens, rt, led_sum, quick, **extra)
+    html.write_report_html(out, base, stress, sens, rt, led_sum, quick, **extra)
     log(f"reproduce finished in {summary['total_s']:.0f} s; outputs in {out}")
     return summary
 

@@ -36,16 +36,6 @@ HEADLINE_COLS = [
     ("gini_benefit", "Gini of benefit", "{:.2f}"),
 ]
 
-SITE_COLS = [
-    ("scenario", "Site", None),
-    ("run", "Strategy", None),
-    ("crit_coverage_outage_pct", "Critical coverage (%)", "{:.1f}"),
-    ("worst_household_crit_coverage_pct", "Worst household (%)", "{:.1f}"),
-    ("fuel_l", "Fuel (L)", "{:,.0f}"),
-    ("co2_kg", "CO2 (t)", "k1000"),
-    ("curtailed_kwh", "PV curtailed (kWh)", "{:,.0f}"),
-]
-
 STRESS_COLS = [
     ("scenario", "Pressure test", None),
     ("run", "Strategy", None),
@@ -119,7 +109,69 @@ def _facts(base: pd.DataFrame, stress: pd.DataFrame, sens: pd.DataFrame, rt: pd.
     return f
 
 
-def _intro(base, stress, sens, rt, led, quick) -> list[str]:
+CITY_NOTE = (
+    "Abuja and Kano runs, with the same fleet, loads and grid schedule, give near-identical results because "
+    "shortfalls fall mostly at night, so battery capacity and outage timing dominate irradiance."
+)
+
+
+def fuel_note(prices: dict | None) -> str:
+    if not prices:
+        return ""
+    return (
+        f"Costs use petrol at {prices['fuel_ngn_per_l']:,.0f} NGN/L (NBS average, May 2026). "
+        "The fuel price affects only NGN figures, not coverage or fuel volume."
+    )
+
+
+def rob_summary(rob: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for scen, g in rob.groupby("scenario", sort=False):
+        rows.append(
+            {
+                "scenario": scen,
+                "n": len(g),
+                "s0": f"{g.s0_crit_coverage_outage_pct.min():.1f} to {g.s0_crit_coverage_outage_pct.max():.1f}",
+                "cov": f"{g.crit_coverage_outage_pct.min():.1f} to {g.crit_coverage_outage_pct.max():.1f}",
+                "worst": f"{g.worst_household_crit_coverage_pct.min():.1f} to {g.worst_household_crit_coverage_pct.max():.1f}",
+                "worse": ", ".join(str(int(x)) for x in g.households_worse_off),
+                "worse_gen": ", ".join(str(int(x)) for x in g.worse_off_with_generator),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+ROB_COLS = [
+    ("scenario", "Scenario", None),
+    ("n", "Seeds", "{:d}"),
+    ("s0", "S0 critical coverage (%)", "{}"),
+    ("cov", "S2 critical coverage (%)", "{}"),
+    ("worst", "S2 worst household (%)", "{}"),
+    ("worse", "Households worse off, per seed", "{}"),
+    ("worse_gen", "Of which own a generator", "{}"),
+]
+
+CHOICE_COLS = [
+    ("setting", "S2 setting", None),
+    ("crit_coverage_outage_pct", "Critical coverage (%)", "{:.1f}"),
+    ("worst_household_crit_coverage_pct", "Worst household (%)", "{:.1f}"),
+    ("fuel_l", "Fuel (L)", "{:,.0f}"),
+    ("households_worse_off", "Households worse off than S0", "{:d}"),
+    ("gini_benefit", "Gini of benefit", "{:.2f}"),
+]
+
+DEFAULTS_TEXT = (
+    "The S2 battery reserve and the settlement prices were set after a sensitivity sweep on the Lagos baseline "
+    "(seed 42), not before it. The first version used a 50% reserve and one flat price of 600 NGN/kWh. A higher "
+    "reserve lowered critical coverage and left more donors worse off, so the reserve was lowered to 30%. With a flat "
+    "price, battery donors subsidise their neighbours: they sell stored energy at 600 NGN/kWh and later serve less of "
+    "their own load or refill it with petrol at about 1,556 NGN/kWh. Pricing battery-sourced energy at 1,200 NGN/kWh, "
+    "with PV surplus kept at 600 NGN/kWh, removes that transfer on this seed. Dispatch does not depend on price, so "
+    "coverage and fuel do not change with it; only who gains does."
+)
+
+
+def _intro(base, stress, sens, rt, led, quick, prices=None, rob=None) -> list[str]:
     f = _facts(base, stress, sens, rt, led)
     s0, s1, s2, lag = f["s0"], f["s1"], f["s2"], f["lagos"]
     pooled = lag.loc["pooled-ref"]["crit_coverage_no_gen_pct"] if "pooled-ref" in lag.index else float("nan")
@@ -146,10 +198,21 @@ def _intro(base, stress, sens, rt, led, quick) -> list[str]:
         "comes from routing stored energy to neighbours' critical loads.",
         f"- Households worse off than under islanded operation over the year: S1 {int(s1['households_worse_off'])}, "
         f"S2 {int(s2['households_worse_off'])} of {int(s2['households'])}. Gini of benefit: S1 {s1['gini_benefit']:.2f}, S2 {s2['gini_benefit']:.2f}.",
+        *(
+            [
+                f"- Across all seeds and pressure tests, S2 left between {int(rob.households_worse_off.min())} and "
+                f"{int(rob.households_worse_off.max())} households worse off than islanded, all solar-battery donors "
+                "(see Robustness below)."
+            ]
+            if rob is not None and len(rob)
+            else []
+        ),
         f"- Settlement ledger for S2: {led['entries']:,} hash-chained entries, verify() = {led['verified']}, "
         f"altering one entry detected = {led['tamper_detected']}, largest daily netting imbalance = {led['daily_netting_max_abs_kobo']} kobo.",
         f"- Runtime for the Lagos run ({f['days']:.0f} days, 15-minute steps, 50 households): "
         f"{f['runtime_max']:.1f} s or less per strategy on {rt['machine'].iloc[0]}.",
+        f"- {CITY_NOTE}",
+        *([f"- {fuel_note(prices)}"] if prices else []),
         "",
     ]
     return lines
@@ -210,13 +273,13 @@ PRICE_COLS = [
 ]
 
 
-def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None) -> Path:
+def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None, rob=None, choices=None, prices=None) -> Path:
     lag = base[base.scenario == "baseline_lagos"]
     sp = stress_pivot(stress)
     lines = ["# vicinia results", ""]
-    lines += _intro(base, stress, sens, rt, led, quick)
+    lines += _intro(base, stress, sens, rt, led, quick, prices, rob)
     lines += [
-        "![Critical coverage by site](figures/coverage_by_site.png)",
+        "![Critical coverage, Lagos](figures/coverage_lagos.png)",
         "",
         "## Strategy comparison, Lagos",
         "",
@@ -230,12 +293,6 @@ def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None) -
         "![Per-household coverage](figures/household_coverage_lagos.png)",
         "",
         "![One week in Lagos](figures/week_lagos.png)",
-        "",
-        "## By site",
-        "",
-        md_table(base[base.run.isin(["S0", "S1", "S2"])], SITE_COLS),
-        "",
-        "![Fuel by site](figures/fuel_by_site.png)",
         "",
         "## Pressure tests",
         "",
@@ -265,11 +322,23 @@ def write_report_md(out: Path, base, stress, sens, rt, led, quick, seeds=None) -
         "",
         "## Settlement price for battery energy",
         "",
-        "PV surplus that would otherwise be curtailed is settled at the base price. Energy a donor discharges from "
-        "its battery has an opportunity cost (the donor may later need its generator), so it can carry a higher price. "
-        "Dispatch does not change with price; only who gains does.",
-        "",
         md_table(sens[sens.parameter == "battery_settlement_ngn_per_kwh"], PRICE_COLS),
+        "",
+        "## How the defaults were chosen",
+        "",
+        DEFAULTS_TEXT,
+        "",
+        md_table(choices, CHOICE_COLS) if choices is not None else "Not run.",
+        "",
+        "![Defaults sweep](figures/defaults_sweep_lagos.png)",
+        "",
+        "## Robustness of the chosen defaults",
+        "",
+        "S2 with the chosen defaults (30% reserve, 600/1,200 NGN/kWh) against S0, for five seeds on the Lagos baseline "
+        "year and on every pressure test. Pressure-test metrics cover the stress window only. Every household left "
+        "worse off is a solar-battery donor. Full table: `robustness_S2.csv`.",
+        "",
+        md_table(rob_summary(rob), ROB_COLS) if rob is not None else "Not run.",
         "",
         "## Seed-to-seed variation (Lagos)",
         "",
@@ -329,11 +398,11 @@ def _img(path: Path, caption: str) -> str:
     )
 
 
-def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None) -> Path:
+def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None, rob=None, choices=None, prices=None) -> Path:
     f = _facts(base, stress, sens, rt, led)
     s0, s1, s2, lag = f["s0"], f["s1"], f["s2"], f["lagos"]
     fig = out / "figures"
-    intro = _intro(base, stress, sens, rt, led, quick)
+    intro = _intro(base, stress, sens, rt, led, quick, prices, rob)
     facts = [ln[2:] for ln in intro if ln.startswith("- ")]
     tiles = [
         ("Critical coverage in outages", f"{s2['crit_coverage_outage_pct']:.1f}%", f"S2, against {s0['crit_coverage_outage_pct']:.1f}% islanded"),
@@ -355,15 +424,12 @@ def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None)
 <div class="tiles">{tiles_html}</div>
 <h2>Headline: Lagos, 50 households, one year</h2>
 <ul class="facts">{''.join(f'<li>{_html.escape(x)}</li>' for x in facts)}</ul>
-{_img(fig / 'coverage_by_site.png', 'Share of critical load served during grid outages, by site and strategy. The black tick marks the worst-off household.')}
+{_img(fig / 'coverage_lagos.png', 'Share of critical load served during grid outages in Lagos. The black tick marks the worst-off household.')}
 <h2>Strategy comparison, Lagos</h2>
 {html_table(lag.reset_index(), HEADLINE_COLS)}
 <p class="lede">The pooled reference has no generators and no losses; compare it with the "without generator" column. S2 reserve only and S2 without battery sharing are ablations that separate the effects of the battery reserve and of battery sharing.</p>
 {_img(fig / 'household_coverage_lagos.png', 'Per-household critical coverage, sorted. Islanded operation leaves homes without storage or generators with nothing during outages.')}
 {_img(fig / 'week_lagos.png', 'One week in Lagos. Shaded bands are grid outages.')}
-<h2>By site</h2>
-{html_table(base[base.run.isin(['S0', 'S1', 'S2'])], SITE_COLS)}
-{_img(fig / 'fuel_by_site.png', 'Generator fuel per year by site and strategy.')}
 <h2>Pressure tests</h2>
 <p class="lede">Each test is a 21-day run. Metrics cover the stress window only; the control is the same window with the event removed.</p>
 {html_table(sp, STRESS_COLS)}
@@ -376,8 +442,14 @@ def write_report_html(out: Path, base, stress, sens, rt, led, quick, seeds=None)
 {_img(fig / 'sensitivity_lagos.png', 'One-at-a-time sensitivity of S2 critical coverage to feeder capacity, distribution losses and battery reserve.')}
 {html_table(sens[sens.parameter != "battery_settlement_ngn_per_kwh"], SENS_COLS)}
 <h2>Settlement price for battery energy</h2>
-<p class="lede">PV surplus is settled at the base price. Battery energy carries a separate price because the donor gives up stored energy it might need later. Dispatch does not change with price; only who gains does.</p>
 {html_table(sens[sens.parameter == "battery_settlement_ngn_per_kwh"], PRICE_COLS)}
+<h2>How the defaults were chosen</h2>
+<p class="lede">{_html.escape(DEFAULTS_TEXT)}</p>
+{html_table(choices, CHOICE_COLS) if choices is not None else ''}
+{_img(fig / 'defaults_sweep_lagos.png', 'Households worse off than islanded as the S2 reserve and the battery energy price change. Dotted lines mark the chosen values.')}
+<h2>Robustness of the chosen defaults</h2>
+<p class="lede">S2 with the chosen defaults against S0, for five seeds on the Lagos baseline year and on every pressure test. Pressure-test metrics cover the stress window only. Every household left worse off is a solar-battery donor.</p>
+{html_table(rob_summary(rob), ROB_COLS) if rob is not None else ''}
 <h2>Settlement ledger</h2>
 <p class="lede">Every transfer in the Lagos S2 run is a ledger entry chained with SHA-256. verify() = {led['verified']}. After altering entry {led.get('tampered_index')} in a copy, verify() fails at entry {led.get('first_invalid_after_tamper')}. Head hash: <code>{_html.escape(str(led.get('head_hash', ''))[:16])}...</code></p>
 <footer>Generated by <code>make reproduce</code> from fixed seeds. Source: github.com/marvinoka4/vicinia. Apache-2.0.</footer>
