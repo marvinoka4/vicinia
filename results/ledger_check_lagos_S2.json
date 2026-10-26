@@ -1,0 +1,9 @@
+{
+  "entries": 786978,
+  "head_hash": "12892d56d88d740bbb476a26a4f03711df70ecc0d1a1b91669f082e7991daae9",
+  "verified": true,
+  "tampered_index": 393489,
+  "tamper_detected": true,
+  "first_invalid_after_tamper": 393489,
+  "daily_netting_max_abs_kobo": 0
+}
