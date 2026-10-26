@@ -11,8 +11,8 @@ grid collapses can cut supply for a day or more. In the same estate, homes
 with rooftop solar and batteries often waste midday surplus because they
 cannot export it, while neighbours without solar run small petrol
 generators for lights, fans, a fridge, phone charging and sometimes medical
-devices. Those generators are expensive (petrol averaged about 1,596 NGN per
-litre in May 2026 according to the National Bureau of Statistics), noisy,
+devices. Those generators are expensive (petrol at 1,596 NGN per litre, NBS average,
+May 2026), noisy,
 polluting and a source of CO2.
 
 The question this project answers with evidence: if neighbours share
@@ -63,7 +63,7 @@ every home falls back to islanded operation.
   received after losses, price and amount in integer kobo. Each hash is
   SHA-256 of the previous hash plus the entry. `verify()` recomputes the
   chain; netting is per day and per household.
-- Tests: 44 tests. Hypothesis generates random neighbourhoods and checks
+- Tests: 45 tests. Hypothesis generates random neighbourhoods and checks
   per-household energy balance, sent minus losses equals received every
   interval, battery state of charge within bounds and consistent with the
   flows, feeder limit respected, no household receiving more than its
@@ -71,7 +71,7 @@ every home falls back to islanded operation.
   detection for any altered field, and deterministic results for a fixed
   seed.
 - `make reproduce` regenerates every CSV, figure, `results/REPORT.md` and
-  the HTML report from fixed seeds in about 7.5 minutes.
+  the HTML report from fixed seeds in about 10 minutes.
 
 ## Evidence
 
@@ -96,18 +96,58 @@ time):
   PV, batteries and sharing alone, against 42.2% islanded.
 - Ablations show where the gain comes from: the S2 battery reserve without
   sharing gives 68.8%, and S2 without battery sharing gives 76.9%.
-- No household ends the year worse off than islanded under S1 or S2. This
-  needed a separate price for battery-sourced energy (1,200 NGN/kWh against
-  600 NGN/kWh for PV surplus); with one 600 NGN/kWh price, 3 solar-battery
-  donors were worse off. The price sweep is published.
+- Lagos is the headline case. Abuja and Kano runs, with the same fleet,
+  loads and grid schedule, give near-identical results because shortfalls
+  fall mostly at night, so battery capacity and outage timing dominate
+  irradiance.
+- Costs use petrol at 1,596 NGN/L (NBS average, May 2026). The fuel price
+  affects only NGN figures, not coverage or fuel volume.
 - Pressure tests, critical coverage during the stress window for S0 / S1 /
   S2: 72-hour blackout 71.4 / 78.3 / 93.3%; harmattan week at 40%
   irradiance 71.2 / 78.7 / 98.0%; largest contributor drops out 72.7 /
   82.0 / 98.3%; feeder halved 72.3 / 83.9 / 99.5%; 48-hour communication
   loss 71.4 / 71.4 / 72.0%, with no transfers or ledger entries, which is
-  the intended fallback to islanded operation. Sharing never did worse
+  the intended fallback to islanded operation. On critical coverage, sharing never did worse
   than islanded. Halving the feeder had no effect because peak transfers
   stayed below the halved limit.
+How the defaults were chosen. The S2 battery reserve (30%) and the
+two-tier settlement price (600 NGN/kWh for PV surplus, 1,200 NGN/kWh for
+battery energy) were set after a sensitivity sweep on the Lagos baseline,
+not before it. The sweep produced a result in its own right: with one flat
+price, battery donors subsidise their neighbours, because they sell stored
+energy at 600 NGN/kWh and later serve less of their own load or refill it
+with petrol at about 1,556 NGN/kWh. Coverage and fuel do not depend on
+price; only who gains does.
+
+| S2 setting (Lagos, seed 42, one year) | Critical coverage | Worst-off household | Households worse off than S0 |
+|---|---:|---:|---:|
+| Original: 50% reserve, flat 600 NGN/kWh | 95.3% | 82.7% | 11 |
+| Chosen: 30% reserve, two-tier price | 98.1% | 93.8% | 0 |
+
+Sweep figures: https://github.com/marvinoka4/vicinia/blob/main/results/figures/defaults_sweep_lagos.png
+and https://github.com/marvinoka4/vicinia/blob/main/results/figures/sensitivity_lagos.png
+
+Robustness. The chosen defaults were then run, without retuning, on five
+seeds for the Lagos year and for every pressure test:
+
+| Scenario | S2 critical coverage | S2 worst-off household | Households worse off than S0, per seed |
+|---|---:|---:|---:|
+| Lagos baseline, full year | 98.1 to 99.0% | 92.0 to 94.7% | 0, 0, 0, 4, 0 |
+| 72-hour blackout | 94.1 to 97.5% | 69.4 to 87.0% | 3, 4, 4, 10, 3 |
+| Harmattan week | 96.7 to 99.7% | 88.5 to 98.4% | 3, 3, 0, 4, 0 |
+| Contributor drops out | 97.4 to 100.0% | 90.4 to 100.0% | 1, 1, 1, 0, 0 |
+| Feeder halved | 97.1 to 99.9% | 90.2 to 99.7% | 1, 0, 0, 2, 0 |
+| Communication loss | 71.6 to 83.6% | 0.0% | 3, 17, 15, 15, 0 |
+
+Some households are left worse off than islanded, and all of them are
+solar-battery donors. On the full year one seed in five leaves 4 donors
+worse off, all generator owners who refill their own load with petrol that
+costs more per kWh than they earn. Over the short stress windows up to 10
+donors are worse off, and up to 17 during communication loss. Window
+counts do not value energy left in batteries at the end, so they overstate
+the loss somewhat; they are reported as measured. Two-tier pricing reduces
+the subsidy from donors but does not remove it in every case.
+
 - Ledger for the Lagos S2 year: 786,978 entries, chain verifies, an altered
   entry is detected, daily netting balances to 0 kobo.
 - Runtime for one simulated year of 50 households: 2.7 s (S0), 4.5 s (S1),
@@ -115,7 +155,8 @@ time):
 
 Figures:
 
-- Critical coverage by site: https://github.com/marvinoka4/vicinia/blob/main/results/figures/coverage_by_site.png
+- Interactive report: https://marvinoka4.github.io/vicinia/
+- Critical coverage, Lagos: https://github.com/marvinoka4/vicinia/blob/main/results/figures/coverage_lagos.png
 - Pressure tests: https://github.com/marvinoka4/vicinia/blob/main/results/figures/stress_tests.png
 - 72-hour blackout detail: https://github.com/marvinoka4/vicinia/blob/main/results/figures/blackout_72h.png
 - Per-household coverage: https://github.com/marvinoka4/vicinia/blob/main/results/figures/household_coverage_lagos.png
@@ -136,9 +177,13 @@ Apache-2.0
 
 ## Demo
 
-`results/report.html` is a self-contained static report (no server or
-network needed) generated by `make reproduce`. Screenshots are in
-`docs/img/`. To run it yourself:
+Report: https://marvinoka4.github.io/vicinia/
+
+The page is `results/report.html`, a self-contained static report (no
+server or network needed) generated by `make reproduce` and deployed to
+GitHub Pages on every push to main. Screenshots are in
+https://github.com/marvinoka4/vicinia/tree/main/docs/img . To run it
+yourself:
 
 ```bash
 git clone https://github.com/marvinoka4/vicinia && cd vicinia
