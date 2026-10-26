@@ -74,9 +74,9 @@ class Params:
     loss_fraction: float = 0.05
     reserve_soc: float = 0.5
     share_battery: bool = True
-    settlement_ngn_per_kwh: float = 400.0
+    settlement_ngn_per_kwh: float = 600.0
     grid_tariff_ngn_per_kwh: float = 209.5
-    fuel_ngn_per_l: float = 950.0
+    fuel_ngn_per_l: float = 1596.0
     gen_fuel_noload_l_per_kw_h: float = 0.25
     gen_fuel_l_per_kwh: float = 0.35
     gen_min_load_kw: float = 0.10

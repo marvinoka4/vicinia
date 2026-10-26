@@ -39,7 +39,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "grid": {},
     "sharing": {"feeder_kw": 25.0, "loss_fraction": 0.05, "reserve_soc": 0.5, "share_battery": True},
-    "prices": {"settlement_ngn_per_kwh": 400.0, "grid_tariff_ngn_per_kwh": 209.5, "fuel_ngn_per_l": 950.0},
+    "prices": {"settlement_ngn_per_kwh": 600.0, "grid_tariff_ngn_per_kwh": 209.5, "fuel_ngn_per_l": 1596.0},
     "generator": {"fuel_noload_l_per_kw_h": 0.25, "fuel_l_per_kwh": 0.35, "min_load_kw": 0.10, "co2_kg_per_l": 2.27},
     "events": [],
     "window": None,
