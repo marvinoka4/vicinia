@@ -62,7 +62,7 @@ every home falls back to islanded operation.
   received after losses, price and amount in integer kobo. Each hash is
   SHA-256 of the previous hash plus the entry. `verify()` recomputes the
   chain; netting is per day and per household.
-- Tests: 45 tests. Hypothesis generates random neighbourhoods and checks
+- Tests: 50 tests. Hypothesis generates random neighbourhoods and checks
   per-household energy balance, sent minus losses equals received every
   interval, battery state of charge within bounds and consistent with the
   flows, feeder limit respected, no household receiving more than its
@@ -102,10 +102,10 @@ time):
 - Costs use petrol at 1,596 NGN/L (NBS average, May 2026). The fuel price
   affects only NGN figures, not coverage or fuel volume.
 - Pressure tests, critical coverage during the stress window for S0 / S1 /
-  S2: 72-hour blackout 71.4 / 78.3 / 93.3%; harmattan week at 40%
-  irradiance 71.2 / 78.7 / 98.0%; largest contributor drops out 72.7 /
-  82.0 / 98.3%; feeder halved 72.3 / 83.9 / 99.5%; 48-hour communication
-  loss 71.4 / 71.4 / 72.0%, with no transfers or ledger entries, which is
+  S2 (seed 42): 72-hour blackout 67.6 / 74.0 / 94.1%; harmattan week at
+  40% irradiance 69.8 / 71.3 / 96.7%; largest contributor drops out 68.9 /
+  74.8 / 97.4%; feeder halved 68.9 / 75.0 / 97.1%; 48-hour communication
+  loss 71.1 / 71.1 / 71.6%, with no transfers or ledger entries, which is
   the intended fallback to islanded operation. On critical coverage,
   sharing never did worse than islanded. Halving the feeder had no effect
   because peak transfers stayed below the halved limit.
@@ -156,8 +156,8 @@ the subsidy from donors but does not remove it in every case.
 
 - Ledger for the Lagos S2 year: 786,978 entries, chain verifies, an altered
   entry is detected, daily netting balances to 0 kobo.
-- Runtime for one simulated year of 50 households: 2.7 s (S0), 4.5 s (S1),
-  10.4 s (S2).
+- Runtime for one simulated year of 50 households: 2.2 s (S0), 4.8 s (S1),
+  12.6 s (S2).
 
 Figures:
 

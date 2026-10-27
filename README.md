@@ -98,30 +98,30 @@ affects only NGN figures, not coverage or fuel volume.
   routing stored energy above the donor's reserve to neighbours' critical
   loads.
 
-**Pressure tests** (critical coverage during the stress window, S0 / S1 / S2):
+**Pressure tests** (seed 42, the same seed as the first robustness column; critical coverage during the stress window):
 
 | Test | S0 | S1 | S2 | S2 without the stress |
 |---|---:|---:|---:|---:|
-| 72-hour total blackout | 71.4% | 78.3% | 93.3% | 98.8% |
-| Harmattan week, irradiance at 40% (Kano) | 71.2% | 78.7% | 98.0% | 98.6% |
-| Largest solar contributor drops out | 72.7% | 82.0% | 98.3% | 98.4% |
-| Feeder capacity halved | 72.3% | 83.9% | 99.5% | 99.5% |
-| Communication loss, 48 h | 71.4% | 71.4% | 72.0% | 98.3% |
+| 72-hour total blackout | 67.6% | 74.0% | 94.1% | 98.6% |
+| Harmattan week, irradiance at 40% (Kano) | 69.8% | 71.3% | 96.7% | 97.3% |
+| Largest solar contributor drops out | 68.9% | 74.8% | 97.4% | 97.7% |
+| Feeder capacity halved | 68.9% | 75.0% | 97.1% | 97.1% |
+| Communication loss, 48 h | 71.1% | 71.1% | 71.6% | 97.1% |
 
 On critical coverage, sharing never did worse than islanded under any
 stress. During communication loss there are no transfers and no ledger
 entries; every home falls back to its own PV, battery and generator, which
 is the safe outcome, and coverage is close to S0 (S2 homes keep their local
 battery reserve). Halving the feeder had no effect because peak transfers were
-7.4 kW, below the halved 12.5 kW limit. Over the full year the peak was
+5.9 kW, below the halved 12.5 kW limit. Over the full year the peak was
 7.9 kW; at a 5 kW limit S2 coverage falls only from 98.1% to 97.8%.
 
 **Ledger**: the Lagos S2 run writes 786,978 hash-chained entries;
 `verify()` passes, altering one entry is detected at that entry, and daily
 netting balances to 0 kobo.
 
-**Runtime**: one simulated year for 50 households takes 2.7 s (S0), 4.5 s
-(S1) and 10.4 s (S2) on one CPU core of the build machine
+**Runtime**: one simulated year for 50 households takes 2.2 s (S0), 4.8 s
+(S1) and 12.6 s (S2) on one CPU core of the build machine
 (`results/runtime.csv`). A full `make reproduce` takes about 10 minutes.
 
 ![Critical coverage, Lagos](results/figures/coverage_lagos.png)
@@ -175,7 +175,7 @@ counts overstate the loss somewhat; they are reported as measured.
 
 ## Tests
 
-`make test` runs 45 tests. Property-based tests (hypothesis) generate
+`make test` runs 50 tests. Property-based tests (hypothesis) generate
 random small neighbourhoods and check, for every strategy and every
 interval:
 
