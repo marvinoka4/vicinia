@@ -111,6 +111,16 @@ It mirrors how backup systems are commonly wired in Nigerian homes (an
 | Generator policy | Runs for any remaining deficit (critical and non-critical) | **Assumption** about behaviour. |
 | CO2 per litre of petrol | 2.27 kg/L | IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 2, Ch. 1: default CO2 emission factor for motor gasoline 69,300 kg/TJ (Table 1.4) and net calorific value 44.3 TJ/Gg (Table 1.2), with an assumed density of 0.74 kg/L. Only CO2 is counted; CH4, N2O, CO and particulates are not. |
 
+## Context references
+
+These sources are cited for context in the README and SUBMISSION.md. They
+do not feed any model parameter.
+
+- NERC Net Billing Regulations 2026 (issued 3 June 2026), summary by DLA
+  Piper Africa: https://www.dlapiperafrica.com/en/nigeria/insights/2026/nerc_net_billing_regulations_2026
+- Okra Solar, DC mesh grids under the DARES programme in Nigeria:
+  https://www.okrasolar.com/blog/dares-is-out-mesh-grids-are-in
+
 ## Software and licences
 
 All dependencies are open source: numpy (BSD-3), pandas (BSD-3), pvlib (BSD-3),
