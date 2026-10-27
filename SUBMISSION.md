@@ -11,9 +11,8 @@ grid collapses can cut supply for a day or more. In the same estate, homes
 with rooftop solar and batteries often waste midday surplus because they
 cannot export it, while neighbours without solar run small petrol
 generators for lights, fans, a fridge, phone charging and sometimes medical
-devices. Those generators are expensive (petrol at 1,596 NGN per litre, NBS average,
-May 2026), noisy,
-polluting and a source of CO2.
+devices. Those generators are expensive (petrol at 1,596 NGN per litre,
+NBS average, May 2026), noisy, polluting and a source of CO2.
 
 The question this project answers with evidence: if neighbours share
 energy locally during outages, critical loads first, how much does
@@ -107,10 +106,13 @@ time):
   irradiance 71.2 / 78.7 / 98.0%; largest contributor drops out 72.7 /
   82.0 / 98.3%; feeder halved 72.3 / 83.9 / 99.5%; 48-hour communication
   loss 71.4 / 71.4 / 72.0%, with no transfers or ledger entries, which is
-  the intended fallback to islanded operation. On critical coverage, sharing never did worse
-  than islanded. Halving the feeder had no effect because peak transfers
-  stayed below the halved limit.
-How the defaults were chosen. The S2 battery reserve (30%) and the
+  the intended fallback to islanded operation. On critical coverage,
+  sharing never did worse than islanded. Halving the feeder had no effect
+  because peak transfers stayed below the halved limit.
+
+### How the defaults were chosen
+
+The S2 battery reserve (30%) and the
 two-tier settlement price (600 NGN/kWh for PV surplus, 1,200 NGN/kWh for
 battery energy) were set after a sensitivity sweep on the Lagos baseline,
 not before it. The sweep produced a result in its own right: with one flat
@@ -127,8 +129,10 @@ price; only who gains does.
 Sweep figures: https://github.com/marvinoka4/vicinia/blob/main/results/figures/defaults_sweep_lagos.png
 and https://github.com/marvinoka4/vicinia/blob/main/results/figures/sensitivity_lagos.png
 
-Robustness. The chosen defaults were then run, without retuning, on five
-seeds for the Lagos year and for every pressure test:
+### Robustness
+
+The chosen defaults were then run, without retuning, on five seeds for the
+Lagos year and for every pressure test:
 
 | Scenario | S2 critical coverage | S2 worst-off household | Households worse off than S0, per seed |
 |---|---:|---:|---:|
@@ -147,6 +151,8 @@ donors are worse off, and up to 17 during communication loss. Window
 counts do not value energy left in batteries at the end, so they overstate
 the loss somewhat; they are reported as measured. Two-tier pricing reduces
 the subsidy from donors but does not remove it in every case.
+
+### Ledger, runtime and figures
 
 - Ledger for the Lagos S2 year: 786,978 entries, chain verifies, an altered
   entry is detected, daily netting balances to 0 kobo.
