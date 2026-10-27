@@ -1,0 +1,24 @@
+name: baseline_lagos
+description: >
+  One year, 50 households in Lagos on a feeder with Band C supply hours
+  (12 h/day minimum), random feeder faults and occasional grid collapses.
+seed: 42
+site: lagos
+start: "2026-01-01"
+days: 365
+timestep_minutes: 15
+households:
+  count: 50
+grid:
+  band: C
+  fault_rate_per_week: 2.0
+  collapse_rate_per_year: 6.0
+sharing:
+  feeder_kw: 25.0
+  loss_fraction: 0.05
+  reserve_soc: 0.3
+prices:
+  settlement_ngn_per_kwh: 600.0
+  battery_settlement_ngn_per_kwh: 1200.0
+  grid_tariff_ngn_per_kwh: 209.5
+  fuel_ngn_per_l: 1596.0

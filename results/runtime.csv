@@ -1,0 +1,4 @@
+scenario,days,households,intervals,run,runtime_s,input_build_s,ledger_entries,machine
+baseline_lagos,365.0,50,35040,S0,2.21,0.69,0,x86_64 CPython 3.11.17
+baseline_lagos,365.0,50,35040,S1,4.81,0.69,186241,x86_64 CPython 3.11.17
+baseline_lagos,365.0,50,35040,S2,12.64,0.69,786978,x86_64 CPython 3.11.17

@@ -1,0 +1,15 @@
+name: stress_comm_loss
+description: >
+  Communication loss for 48 hours. No transfers can be coordinated or
+  settled, so every household must fall back to islanded operation.
+seed: 42
+site: lagos
+start: "2026-03-01"
+days: 21
+households:
+  count: 50
+grid:
+  band: C
+events:
+  - {type: comm_loss, start: "2026-03-10 00:00", hours: 48}
+window: {start: "2026-03-10 00:00", days: 2}
