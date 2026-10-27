@@ -78,3 +78,16 @@ def test_blackout_keeps_critical_coverage_close_to_pooled_reference():
     ref = _m(df, "stress", "pooled-ref", "crit_coverage_no_gen_pct")
     assert s2 <= ref + 1e-9
     assert _m(df, "stress", "S2") > _m(df, "stress", "S0")
+
+
+def test_stress_table_matches_robustness_seed(stressed):
+    """The published pressure-test row and the robustness row for the same seed must agree."""
+    from vicinia.reproduce import SEEDS
+
+    name, df, _, _ = stressed
+    cfg = scenario.load(SCEN / f"{name}.yaml")
+    assert cfg["seed"] in SEEDS
+    rob = ex.robustness([cfg], [cfg["seed"]]).iloc[0]
+    for col in ("crit_coverage_outage_pct", "worst_household_crit_coverage_pct", "households_worse_off"):
+        assert _m(df, "stress", "S2", col) == rob[col], (name, col)
+    assert _m(df, "stress", "S0") == rob["s0_crit_coverage_outage_pct"]
