@@ -17,6 +17,19 @@ transfer is settled on a tamper-evident ledger. The question it answers:
 how much does local sharing improve critical-load coverage and cut generator
 fuel and emissions during outages, and does it degrade safely under stress?
 
+## Where this fits
+
+NERC's [Net Billing Regulations 2026](https://www.dlapiperafrica.com/en/nigeria/insights/2026/nerc_net_billing_regulations_2026), issued on 3 June 2026, let
+grid-connected solar systems of 50 kWp to 1.5 MWp sell surplus to the
+distribution company while the grid is up. Typical home rooftop systems
+fall below that size, and vicinia targets the other case: small
+residential systems sharing with neighbours while the grid is down, so the
+two are complementary. Low-voltage DC mesh grids that share power between
+solar home systems are already being deployed in Nigeria, for example by
+[Okra Solar under the DARES programme](https://www.okrasolar.com/blog/dares-is-out-mesh-grids-are-in). vicinia's allocation and
+settlement layer does not depend on a particular hardware design and could
+in principle run on such a physical layer; this has not been tested.
+
 ## Quick start
 
 ```bash

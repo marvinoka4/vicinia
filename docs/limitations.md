@@ -41,6 +41,14 @@ headline numbers.
   minimum run time, no maintenance cost. Only CO2 is counted; local air
   pollution and noise, which matter a great deal for health, are not.
 
+## Deployment
+
+A real deployment needs things this model does not cover: inverters able
+to form and hold a safe island during outages, anti-islanding protection
+so nothing back-feeds the grid when supply returns, protection
+coordination on the shared feeder, and metering and communications for
+every home. The cost of that hardware is not included in the economics.
+
 ## Behaviour and economics
 
 - **Fixed behaviour.** Households do not change consumption in response to

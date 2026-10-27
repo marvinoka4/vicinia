@@ -1,5 +1,12 @@
 # vicinia: neighbourhood solar sharing that keeps critical loads on during Nigerian grid outages
 
+In a simulated Lagos neighbourhood of 50 homes over one year, sharing solar
+and battery energy critical loads first raised critical-load coverage
+during grid outages from 68.4% to 98.1% and cut generator petrol use by
+29.7% (23.6% to 32.9% across five seeds). These results come from a
+tested, reproducible simulation with synthetic inputs, not field
+measurements.
+
 ## Primary track
 
 RESILIENT
@@ -38,6 +45,19 @@ Three strategies are compared on the same simulated neighbourhood:
 
 If communication fails, no transfers can be coordinated or settled, and
 every home falls back to islanded operation.
+
+## Where this fits
+
+NERC's [Net Billing Regulations 2026](https://www.dlapiperafrica.com/en/nigeria/insights/2026/nerc_net_billing_regulations_2026), issued on 3 June 2026, let
+grid-connected solar systems of 50 kWp to 1.5 MWp sell surplus to the
+distribution company while the grid is up. Typical home rooftop systems
+fall below that size, and vicinia targets the other case: small
+residential systems sharing with neighbours while the grid is down, so the
+two are complementary. Low-voltage DC mesh grids that share power between
+solar home systems are already being deployed in Nigeria, for example by
+[Okra Solar under the DARES programme](https://www.okrasolar.com/blog/dares-is-out-mesh-grids-are-in). vicinia's allocation and
+settlement layer does not depend on a particular hardware design and could
+in principle run on such a physical layer; this has not been tested.
 
 ## Technical implementation
 
@@ -171,7 +191,10 @@ Figures:
 
 Main limitations: synthetic loads and fleet, no field validation, an
 energy-only electrical model (no power flow), and the assumption that
-inverters can form a safe island during outages. See `docs/limitations.md`.
+inverters can form a safe island during outages. 
+
+A real deployment needs things this model does not cover: inverters able to form and hold a safe island during outages, anti-islanding protection so nothing back-feeds the grid when supply returns, protection coordination on the shared feeder, and metering and communications for every home. The cost of that hardware is not included in the economics.
+See `docs/limitations.md`.
 
 ## Source code
 
