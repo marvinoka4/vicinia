@@ -191,7 +191,10 @@ Figures:
 
 Main limitations: synthetic loads and fleet, no field validation, an
 energy-only electrical model (no power flow), and the assumption that
-inverters can form a safe island during outages. See `docs/limitations.md`.
+inverters can form a safe island during outages. 
+
+A real deployment needs things this model does not cover: inverters able to form and hold a safe island during outages, anti-islanding protection so nothing back-feeds the grid when supply returns, protection coordination on the shared feeder, and metering and communications for every home. The cost of that hardware is not included in the economics.
+See `docs/limitations.md`.
 
 ## Source code
 
