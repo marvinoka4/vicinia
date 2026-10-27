@@ -2,7 +2,7 @@ name: stress_harmattan_week
 description: >
   Kano in January with a severe dust and cloud week: irradiance cut to 40%
   of its normal stochastic value for 7 days.
-seed: 7
+seed: 42
 site: kano
 start: "2026-01-01"
 days: 21
