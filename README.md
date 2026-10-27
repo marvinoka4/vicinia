@@ -98,7 +98,7 @@ affects only NGN figures, not coverage or fuel volume.
   routing stored energy above the donor's reserve to neighbours' critical
   loads.
 
-**Pressure tests** (seed 42, the same seed as the first robustness column; critical coverage during the stress window):
+**Pressure tests** (seed 42, the first seed in the robustness table below; critical coverage during the stress window):
 
 | Test | S0 | S1 | S2 | S2 without the stress |
 |---|---:|---:|---:|---:|
