@@ -196,6 +196,15 @@ inverters can form a safe island during outages.
 A real deployment needs things this model does not cover: inverters able to form and hold a safe island during outages, anti-islanding protection so nothing back-feeds the grid when supply returns, protection coordination on the shared feeder, and metering and communications for every home. The cost of that hardware is not included in the economics.
 See `docs/limitations.md`.
 
+## Path to deployment in Nigeria
+
+1. Pilot estate. Partner with one estate or residents' association that already has a mix of solar-battery homes and generator users. Install meters on a small group of homes and collect several months of real load and outage data.
+2. Recalibrate. Replace the synthetic loads, fleet and outage schedule with the metered data, re-run the three strategies, and publish the before-and-after comparison in the repo.
+3. Agree the rules before the hardware. Draft a simple sharing agreement with the residents: essentials first, a battery reserve for each owner, and a higher price for stored energy than for daytime surplus. The ledger gives every member the same verifiable record of who sent and received what.
+4. Physical layer. Run the allocation and settlement layer on hardware that can share power safely during outages, such as low-voltage DC mesh grids of the kind already deployed in Nigeria under the DARES programme, or islanding-capable inverters on a protected feeder. Cost that hardware and add it to the economics.
+5. Regulatory fit. Engage the local distribution company and NERC early. The 2026 Net Billing Regulations cover larger grid-connected systems while the grid is up; neighbour sharing during outages at residential scale is a separate case that a pilot can help define.
+6. Scale. If the pilot confirms the coverage and fuel gains, package the engine and ledger as an open tool that estates and mesh-grid operators can run themselves.
+
 ## Source code
 
 https://github.com/marvinoka4/vicinia
